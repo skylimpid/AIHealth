@@ -378,5 +378,5 @@ if __name__ == '__main__':
     # prepare the data with manually labelled
     full_prep(step1=True, step2=True)
 
-    prepare_luna()
-    preprocess_luna()
+    #prepare_luna()
+    #preprocess_luna()

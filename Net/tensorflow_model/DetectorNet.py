@@ -1,8 +1,29 @@
 import tensorflow as tf
+from Net.Loss import Loss
+from Utils.utils import GetPBB
 
 
 config = {}
 config['anchors'] = [10,30,60]
+config['chanel'] = 1
+config['crop_size'] = [128, 128, 128]
+config['stride'] = 4
+config['max_stride'] = 16
+config['num_neg'] = 800
+config['th_neg'] = 0.02
+config['th_pos_train'] = 0.5
+config['th_pos_val'] = 1
+config['num_hard'] = 2
+config['bound_size'] = 12
+config['reso'] = 1
+config['sizelim'] = 6
+config['sizelim2'] = 30
+config['sizelim3'] = 40
+config['aug_scale'] = True
+config['r_rand_crop'] = 0.3
+config['pad_value'] = 170
+config['augtype'] = {'flip':True,'swap':False,'scale':True,'rotate':False}
+config['blacklist'] = []
 
 class DecetorNet(object):
 
@@ -234,6 +255,11 @@ class DecetorNet(object):
 #        print (out.shape)
         return feat, out
 
+def get_model():
+    net = DecetorNet()
+    loss = Loss(config['num_hard'])
+    get_pbb = GetPBB(config)
+    return config, net, loss, get_pbb
 
 
 if __name__ == '__main__':

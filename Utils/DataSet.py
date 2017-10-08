@@ -1,4 +1,4 @@
-class Dataset(object):
+class DataSet(object):
     """An abstract class representing a Dataset.
 
     All other datasets should subclass it. All subclasses should override

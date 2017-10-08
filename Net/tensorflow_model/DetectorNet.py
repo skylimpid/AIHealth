@@ -12,7 +12,7 @@ class DecetorNet(object):
         self.img_depth = img_depth
         self.img_channel = img_channel
 
-    def getDetectorNet(self, X):
+    def getDetectorNet(self, X, coord):
 
         """make sure the input tensor has the expected shape"""
         if X.shape != (X.shape[0], self.img_row, self.img_col, self.img_depth, self.img_channel):
@@ -187,8 +187,9 @@ class DecetorNet(object):
         #print(path2_0_relu1.shape)
 
         # comb2
-        comb2 = tf.concat([path2_0_relu1, forw2_1_relu], axis=4)
-        #print(comb2.shape)
+#        print(path2_0_relu1.shape)
+        comb2 = tf.concat([path2_0_relu1, forw2_1_relu, coord], axis=4)
+#        print(comb2.shape)
 
         # back 2
         back2_0_conv1 = tf.layers.conv3d(comb2, 128, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same")
@@ -230,13 +231,14 @@ class DecetorNet(object):
 
         size = output_2.get_shape().as_list()
         out = tf.reshape(output_2, (size[0], size[1], size[2], size[3], len(config['anchors']), 5))
-        print (out.shape)
+#        print (out.shape)
         return feat, out
 
 
 
 if __name__ == '__main__':
     X = tf.placeholder(tf.float32, shape=(100, 128, 128, 128, 1))
+    coord = tf.placeholder(tf.float32, shape=(100, 32, 32, 32, 3))
 
     net = DecetorNet()
-    net.getDetectorNet(X)
+    net.getDetectorNet(X, coord)

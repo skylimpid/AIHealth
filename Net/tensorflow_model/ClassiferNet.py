@@ -10,12 +10,13 @@ class ClassiferNet(object):
         self.img_depth = img_depth
         self.img_channel = img_channel
 
-    def getClassiferNet(self, X):
+    def getClassiferNet(self, X, coord):
         xsize = X.get_shape().as_list()
         X = tf.reshape(X, (-1, self.img_row, self.img_col, self.img_depth, self.img_channel))
 #        print(X.shape)
-
-        noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X)
+        coordsize = coord.get_shape().as_list()
+        coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
+        noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
         nodulePred_size = nodulePred.get_shape().as_list()
         nodulePred = tf.reshape(nodulePred, (nodulePred_size[0], -1, nodulePred_size[4]))
@@ -52,9 +53,10 @@ class ClassiferNet(object):
 
 if __name__ == '__main__':
     X = tf.placeholder(tf.float32, shape=(100, 3, 128, 128, 128, 1))
+    coord = tf.placeholder(tf.float32, shape=(100, 3, 32, 32, 32, 3))
 
     net1 = DecetorNet()
 
     net2 = ClassiferNet(net1)
 
-    net2.getClassiferNet(X)
+    net2.getClassiferNet(X, coord)

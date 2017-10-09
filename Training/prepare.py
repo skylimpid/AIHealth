@@ -265,7 +265,7 @@ def savenpy_luna(id, annos, filelist, luna_segment, luna_data, savepath):
 
 
 def preprocess_luna():
-    luna_segment = cfg.DIR.luna_segment
+    luna_segment = cfg.DIR.luna_segment_data
     savepath = cfg.DIR.preprocess_result_path
     luna_data = cfg.DIR.luna_data
     luna_label = cfg.DIR.luna_label
@@ -296,7 +296,8 @@ def prepare_luna():
     luna_raw = cfg.DIR.luna_raw
     luna_abbr = cfg.DIR.luna_abbr
     luna_data = cfg.DIR.luna_data
-    luna_segment = cfg.DIR.luna_segment
+    luna_segment = cfg.DIR.luna_segment_raw
+    luna_segment_data = cfg.DIR.luna_segment_data
     finished_flag = '.flag_prepareluna'
 
     if not os.path.exists(finished_flag):
@@ -306,6 +307,8 @@ def prepare_luna():
         if not os.path.exists(luna_data):
             os.makedirs(luna_data)
 
+        if not os.path.exists(luna_segment_data):
+            os.makedirs(luna_segment_data)
         # allnames = []
         #         for d in subsetdirs:
         #             files = os.listdir(d)
@@ -337,7 +340,7 @@ def prepare_luna():
                     print("Skip this {}".format(name))
                     continue
                 filename = '0' * (3 - len(str(id))) + str(id)
-                shutil.move(os.path.join(d, f), os.path.join(luna_data, filename + f[-4:]))
+                shutil.copyfile(os.path.join(d, f), os.path.join(luna_data, filename + f[-4:]))
                 print(os.path.join(luna_data, str(id) + f[-4:]))
 
         files = [f for f in os.listdir(luna_data) if f.endswith('mhd')]
@@ -364,18 +367,18 @@ def prepare_luna():
                 id = ids[namelist.index(name)]
                 filename = '0' * (3 - len(str(id))) + str(id)
 
-                shutil.move(os.path.join(luna_segment, f), os.path.join(luna_segment, filename + lastfix))
-                print(os.path.join(luna_segment, filename + lastfix))
+                shutil.copyfile(os.path.join(luna_segment, f), os.path.join(luna_segment_data, filename + lastfix))
+                print(os.path.join(luna_segment_data, filename + lastfix))
 
-        files = [f for f in os.listdir(luna_segment) if f.endswith('mhd')]
+        files = [f for f in os.listdir(luna_segment_data) if f.endswith('mhd')]
         for file in files:
-            with open(os.path.join(luna_segment, file), 'r') as f:
+            with open(os.path.join(luna_segment_data, file), 'r') as f:
                 content = f.readlines()
                 id = file.split('.mhd')[0]
                 filename = '0' * (3 - len(str(id))) + str(id)
                 content[-1] = 'ElementDataFile = ' + filename + '.zraw\n'
                 print(content[-1])
-            with open(os.path.join(luna_segment, file), 'w') as f:
+            with open(os.path.join(luna_segment_data, file), 'w') as f:
                 f.writelines(content)
     print('end changing luna name')
     f = open(finished_flag, "w+")

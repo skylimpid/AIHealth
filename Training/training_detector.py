@@ -1,6 +1,6 @@
 from Training.prepare import full_prep, prepare_luna, preprocess_luna
 from Net.tensorflow_model.DetectorNet import DecetorNet, get_model
-from Training.configuration_training import config
+from Training.configuration_training import cfg
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 import os
 import time
@@ -13,20 +13,21 @@ print("Preprocessing the kaggle data")
 
 full_prep(step1=True, step2=True)
 
-#prepare_luna()
-#preprocess_luna()
+print("Preprocessing the luna data")
+prepare_luna()
+preprocess_luna()
 print("Finish the preprocessing")
 
 net_config, net, loss, get_pbb = get_model()
 
 
-save_dir = config['save_dir']
+save_dir = cfg.DIR.save_dir
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
 logfile = os.path.join(save_dir,'log')
 
-datadir = config['preprocess_result_path']
+datadir = cfg.DIR.preprocess_result_path
 
 dataset = TrainingDetectorData(
     datadir,

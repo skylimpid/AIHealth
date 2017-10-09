@@ -1,6 +1,6 @@
 import os
 import shutil
-from Training.configuration_training import config
+from Training.configuration_training import cfg
 
 from scipy.io import loadmat
 import numpy as np
@@ -154,19 +154,19 @@ def full_prep(step1=True, step2=True):
     warnings.filterwarnings("ignore")
 
     # preprocess_result_path = './prep_result'
-    prep_folder = config['preprocess_result_path']
-    data_path = config['stage1_data_path']
+    prep_folder = cfg.DIR.preprocess_result_path
+    data_path = cfg.DIR.stage1_data_path
     finished_flag = '.flag_prepkaggle'
 
     if not os.path.exists(finished_flag):
-        alllabelfiles = config['stage1_annos_path']
+        alllabelfiles = cfg.DIR.stage1_annos_path
         tmp = []
         for f in alllabelfiles:
             content = np.array(pandas.read_csv(f))
             content = content[content[:, 0] != np.nan]
             tmp.append(content[:, :5])
         alllabel = np.concatenate(tmp, 0)
-        filelist = os.listdir(config['stage1_data_path'])
+        filelist = os.listdir(cfg.DIR.stage1_data_path)
 
         if not os.path.exists(prep_folder):
             os.mkdir(prep_folder)
@@ -265,10 +265,10 @@ def savenpy_luna(id, annos, filelist, luna_segment, luna_data, savepath):
 
 
 def preprocess_luna():
-    luna_segment = config['luna_segment']
-    savepath = config['preprocess_result_path']
-    luna_data = config['luna_data']
-    luna_label = config['luna_label']
+    luna_segment = cfg.DIR.luna_segment
+    savepath = cfg.DIR.preprocess_result_path
+    luna_data = cfg.DIR.luna_data
+    luna_label = cfg.DIR.luna_label
     finished_flag = '.flag_preprocessluna'
     print('starting preprocessing luna')
     if not os.path.exists(finished_flag):
@@ -293,10 +293,10 @@ def preprocess_luna():
 
 def prepare_luna():
     print('start changing luna name')
-    luna_raw = config['luna_raw']
-    luna_abbr = config['luna_abbr']
-    luna_data = config['luna_data']
-    luna_segment = config['luna_segment']
+    luna_raw = cfg.DIR.luna_raw
+    luna_abbr = cfg.DIR.luna_abbr
+    luna_data = cfg.DIR.luna_data
+    luna_segment = cfg.DIR.luna_segment
     finished_flag = '.flag_prepareluna'
 
     if not os.path.exists(finished_flag):
@@ -304,7 +304,7 @@ def prepare_luna():
         subsetdirs = [os.path.join(luna_raw, f) for f in os.listdir(luna_raw) if
                       f.startswith('subset') and os.path.isdir(os.path.join(luna_raw, f))]
         if not os.path.exists(luna_data):
-            os.mkdir(luna_data)
+            os.makedirs(luna_data)
 
         # allnames = []
         #         for d in subsetdirs:
@@ -328,7 +328,12 @@ def prepare_luna():
             files.sort()
             for f in files:
                 name = f[:-4]
-                id = ids[namelist.index(name)]
+                try :
+                    id = ids[namelist.index(name)]
+                except Exception as ex:
+                    print("Can not find {} in {}".format(name, luna_abbr))
+                    print("Skip this {}".format(name))
+                    continue
                 filename = '0' * (3 - len(str(id))) + str(id)
                 shutil.move(os.path.join(d, f), os.path.join(luna_data, filename + f[-4:]))
                 print(os.path.join(luna_data, str(id) + f[-4:]))

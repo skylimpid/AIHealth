@@ -44,6 +44,14 @@ print(imgs.shape)
 print(bbox.shape)
 print(coord.shape)
 
+
+imgs, labels, coords = dataset.getNextBatch(4)
+print(imgs.shape)
+print(labels.shape)
+print(coords.shape)
+
+
+
 import sys
 
 sys.exit(0)

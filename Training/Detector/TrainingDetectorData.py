@@ -56,6 +56,7 @@ class TrainingDetectorData(DataSet):
         #print("bboxes:{}".format(self.bboxes))
         self.crop = Crop(config)
         self.label_mapping = LabelMapping(config, self.phase)
+        self.index = 0
 
     def __getitem__(self, idx, split=None):
         t = time.time()
@@ -127,3 +128,28 @@ class TrainingDetectorData(DataSet):
             return len(self.bboxes)
         else:
             return len(self.sample_bboxes)
+
+    def getNextBatch(self, batch_size):
+        samples=[]
+        labels=[]
+        coords=[]
+        nzhws=[]
+        if self.phase != 'test':
+            for i in range(batch_size):
+                sample, label, coord = self.__getitem__(self.index)
+                samples.append(sample)
+                labels.append(label)
+                coords.append(coord)
+                self.index = self.index + 1
+            return tf.stack(samples), tf.stack(labels), tf.stack(coords)
+        else:
+            for i in range(batch_size):
+                sample, label, coord, nzhw = self.__getitem__(self.index)
+                samples.append(sample)
+                labels.append(label)
+                coords.append(coord)
+                nzhws.append(nzhw)
+                self.index = self.index + 1
+            return tf.stack(samples), tf.stack(labels), tf.stack(coords), tf.stack(nzhws)
+
+

@@ -1,6 +1,6 @@
 import numpy as np
 from Utils.DataSet import DataSet
-from Utils.DataSetUtils import Crop, augment, LabelMapping
+from Utils.DataSetUtils import Crop, DetectorDataAugment, LabelMapping
 import time
 import os
 import tensorflow as tf
@@ -81,7 +81,7 @@ class TrainingDetectorData(DataSet):
                 isScale = self.augtype['scale'] and (self.phase == 'train')
                 sample, target, bboxes, coord = self.crop(imgs, bbox[1:], bboxes, isScale, isRandom)
                 if self.phase == 'train' and not isRandom:
-                    sample, target, bboxes, coord = augment(sample, target, bboxes, coord,
+                    sample, target, bboxes, coord = DetectorDataAugment(sample, target, bboxes, coord,
                                                             ifflip=self.augtype['flip'],
                                                             ifrotate=self.augtype['rotate'],
                                                             ifswap=self.augtype['swap'])

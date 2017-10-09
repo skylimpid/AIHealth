@@ -4,6 +4,7 @@ from Training.configuration_training import cfg
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 import os
 import time
+import tensorflow as tf
 
 # start prepare the trainning data
 
@@ -35,4 +36,38 @@ dataset = TrainingDetectorData(
     net_config,
     phase='train')
 
-start_time = time.time()
+
+
+imgs, bbox, coord = dataset.__getitem__(0)
+
+print(imgs.shape)
+print(bbox.shape)
+print(coord.shape)
+
+import sys
+
+sys.exit(0)
+
+X = tf.placeholder(tf.float32, shape=(None, 128, 128, 128, 1))
+coord = tf.placeholder(tf.float32, shape=(None, 32, 32, 32, None))
+
+feat, out = net.getDetectorNet(X, coord)
+
+# optimizer and learning rate
+global_step = tf.Variable(0, trainable=False)
+
+lr = tf.train.exponential_decay(cfg.TRAIN.LEARNING_RATE, global_step,
+                                cfg.TRAIN.EPOCHS, 0.1, staircase=True)
+monentum = cfg.TRAIN.MOMENTUM
+
+train_op = tf.train.MomentumOptimizer(lr, monentum).minimize(loss, global_step=global_step)
+
+# Initialize the variables (i.e. assign their default value)
+init = tf.global_variables_initializer()
+
+with tf.Session() as sess:
+    #initialize variables
+    sess.run(init)
+    for step in range(1, cfg.TRAIN.EPOCHS):
+        pass
+

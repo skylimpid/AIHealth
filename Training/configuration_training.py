@@ -23,11 +23,11 @@ __C.DIR.preprocessing_backend = 'python'
 
 # HyperParameters for Training.
 __C.TRAIN = edict()
-__C.TRAIN.LEARNING_RATE = 0.001
+__C.TRAIN.LEARNING_RATE = 0.01
 __C.TRAIN.MOMENTUM = 0.9
 __C.TRAIN.GAMMA = 0.1
-__C.TRAIN.STEPSIZE = 50000
 __C.TRAIN.DISPLAY = 10
 __C.IS_MULTISCALE = False
 __C.TRAIN.BATCH_SIZE = 128
+__C.TRAIN.EPOCHS = 100
 

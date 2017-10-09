@@ -3,6 +3,8 @@ from Net.tensorflow_model.DetectorNet import DecetorNet
 
 class ClassiferNet(object):
 
+    DATA_FORMAT = 'channels_first'
+
     def __init__(self, detectorNet, img_row=128, img_col=128, img_depth=128, img_channel=1):
         self.detectorNet = detectorNet
         self.img_row = img_row
@@ -12,27 +14,27 @@ class ClassiferNet(object):
 
     def getClassiferNet(self, X, coord):
         xsize = X.get_shape().as_list()
-        X = tf.reshape(X, (-1, self.img_row, self.img_col, self.img_depth, self.img_channel))
+        X = tf.reshape(X, (-1, self.img_channel, self.img_row, self.img_col, self.img_depth))
 #        print(X.shape)
         coordsize = coord.get_shape().as_list()
         coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
         noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
-        nodulePred_size = nodulePred.get_shape().as_list()
-        nodulePred = tf.reshape(nodulePred, (nodulePred_size[0], -1, nodulePred_size[4]))
+        nodulePred = tf.reshape(nodulePred, (coordsize[0], coordsize[1], -1))
 
         featshape = noduleFeat.get_shape().as_list()
 #        print(featshape)
 
-        centerFeat = noduleFeat[:,
-                     int(featshape[1] / 2 - 1):int(featshape[1] / 2 + 1),
+        centerFeat = noduleFeat[:,:,
                      int(featshape[2] / 2 - 1):int(featshape[2] / 2 + 1),
-                     int(featshape[3] / 2 - 1):int(featshape[3] / 2 + 1), :]
+                     int(featshape[3] / 2 - 1):int(featshape[3] / 2 + 1),
+                     int(featshape[4] / 2 - 1):int(featshape[4] / 2 + 1)]
 #        print(centerFeat.shape)
-        centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="valid")
+        centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="valid",
+                                             data_format=self.DATA_FORMAT)
 #        print(centerFeat.shape)
 
-        centerFeat = centerFeat[:,0,0,0,:]
+        centerFeat = centerFeat[:,:,0,0,0]
 #        print(centerFeat.shape)
         out = tf.layers.dropout(centerFeat, rate=0.5)
 #        print(out.shape)
@@ -52,8 +54,8 @@ class ClassiferNet(object):
 
 
 if __name__ == '__main__':
-    X = tf.placeholder(tf.float32, shape=(100, 3, 128, 128, 128, 1))
-    coord = tf.placeholder(tf.float32, shape=(100, 3, 32, 32, 32, 3))
+    X = tf.placeholder(tf.float32, shape=(100, 3, 1, 128, 128, 128))
+    coord = tf.placeholder(tf.float32, shape=(100, 3, 3, 32, 32, 32))
 
     net1 = DecetorNet()
 

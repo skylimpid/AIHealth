@@ -322,11 +322,13 @@ def prepare_luna():
         abbrevs = np.array(pandas.read_csv(luna_abbr, header=None))
         namelist = list(abbrevs[:, 1])
         ids = abbrevs[:, 0]
-
+#        print(subsetdirs)
         for d in subsetdirs:
             files = os.listdir(d)
             files.sort()
+#            print(files)
             for f in files:
+#                print(f)
                 name = f[:-4]
                 try :
                     id = ids[namelist.index(name)]

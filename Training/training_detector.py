@@ -45,7 +45,7 @@ print(bbox.shape)
 print(coord.shape)
 
 
-imgs, labels, coords = dataset.getNextBatch(4)
+imgs, labels, coords = dataset.getNextBatch(1)
 print(imgs.shape)
 print(labels.shape)
 print(coords.shape)
@@ -60,21 +60,22 @@ with tf.Session() as sess:
     X = tf.placeholder(tf.float32, shape=[None, 1, 128, 128, 128])
     coord = tf.placeholder(tf.float32, shape=[None, 3, 32, 32, 32])
 
+    #initialize variables
+    sess.run(init)
+
     feat, out = net.getDetectorNet(X, coord)
 
     # optimizer and learning rate
-#    global_step = tf.Variable(0, trainable=False)
+    global_step = tf.Variable(0, trainable=False)
 
-#    lr = tf.train.exponential_decay(cfg.TRAIN.LEARNING_RATE, global_step, cfg.TRAIN.EPOCHS, 0.1, staircase=True)
-#    monentum = cfg.TRAIN.MOMENTUM
+    lr = tf.train.exponential_decay(cfg.TRAIN.LEARNING_RATE, global_step, cfg.TRAIN.EPOCHS, 0.1, staircase=True)
+    monentum = cfg.TRAIN.MOMENTUM
 
-#    loss = loss.getLoss(out, labels)
-#    train_op = tf.train.MomentumOptimizer(lr, monentum).minimize(loss, global_step=global_step)
+    loss = tf.reduce_mean(loss.getLoss(out, labels))
+    train_op = tf.train.MomentumOptimizer(lr, monentum).minimize(loss, global_step=global_step)
 
-    #initialize variables
-#    sess.run(init)
-#    feed_dict = {X: imgs, coord: coords}
-#    sess.run(train_op, feed_dict=feed_dict)
+    feed_dict = {X: imgs, coord: coords}
+    sess.run(train_op, feed_dict=feed_dict)
 
 
 

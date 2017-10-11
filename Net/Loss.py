@@ -2,7 +2,8 @@ import tensorflow as tf
 
 
 def hard_mining(neg_output, neg_labels, num_hard):
-    _, idcs = tf.nn.top_k(neg_output, min(num_hard, len(neg_output)))
+    size = neg_output.get_shape().as_list()
+    _, idcs = tf.nn.top_k(neg_output, tf.minimum(num_hard, size[0]))
     neg_output = tf.gather(neg_output, idcs)
     neg_labels = tf.gather(neg_labels, idcs)
     return neg_output, neg_labels
@@ -16,15 +17,26 @@ class Loss():
         batch_size = labels.get_shape().as_list()
         output = tf.reshape(output, shape=(-1, 5))
         labels = tf.reshape(labels, shape= (-1, 5))
-
+        #print(labels.shape)
         pos_idcs = labels[:, 0] > 0.5
-        pos_idcs = pos_idcs.unsqueeze(1).expand(pos_idcs.size(0), 5)
-        pos_output = tf.reshape(output[pos_idcs], shape=(-1, 5))
-        pos_labels = tf.reshape(labels[pos_idcs], shape=(-1, 5))
+        #print(pos_idcs.shape)
+        #pos_idcs = pos_idcs.unsqueeze(1).expand(pos_idcs.size(0), 5)
+        pos_idcs_list=[]
+        for i in range(5):
+            pos_idcs_list.append(pos_idcs)
+        pos_idcs = tf.stack(pos_idcs_list, axis=1)
+        #print(pos_idcs.shape)
+        #pos_output = tf.reshape(output[pos_idcs], shape=(-1, 5))
+        pos_output=tf.convert_to_tensor(tf.reshape(tf.boolean_mask(output,pos_idcs),(-1,5)))
+        #pos_labels = tf.reshape(labels[pos_idcs], shape=(-1, 5))
+        pos_labels=tf.convert_to_tensor(tf.reshape(tf.boolean_mask(labels,pos_idcs),(-1,5)))
 
         neg_idcs = labels[:, 0] < -0.5
-        neg_output = output[:, 0][neg_idcs]
-        neg_labels = labels[:, 0][neg_idcs]
+        #neg_output = output[:, 0][neg_idcs]
+        print(output[:,0].shape)
+        neg_output=tf.boolean_mask(output[:,0], neg_idcs)
+        #neg_labels = labels[:, 0][neg_idcs]
+        neg_labels=tf.boolean_mask(labels[:, 0], neg_idcs)
 
         if self.num_hard > 0 and train:
             neg_output, neg_labels = hard_mining(neg_output, neg_labels, self.num_hard * batch_size)

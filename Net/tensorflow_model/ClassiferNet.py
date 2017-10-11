@@ -17,10 +17,11 @@ class ClassiferNet(object):
         X = tf.reshape(X, (-1, self.img_channel, self.img_row, self.img_col, self.img_depth))
 #        print(X.shape)
         coordsize = coord.get_shape().as_list()
+#        print(coordsize)
         coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
         noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
-        nodulePred = tf.reshape(nodulePred, (coordsize[0], coordsize[1], -1))
+        nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))
 
         featshape = noduleFeat.get_shape().as_list()
 #        print(featshape)
@@ -41,21 +42,21 @@ class ClassiferNet(object):
         dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu)
 #        print(dense1.shape)
         dense2 = tf.layers.dense(inputs=out, units=1, activation=tf.nn.sigmoid)
-        out = tf.reshape(dense2, (xsize[0], xsize[1]))
+        out = tf.reshape(dense2, (-1, xsize[1]))
 #        print(out.shape)
-#        print(self.baseline.shape)
-        baseline = tf.constant(value=-30.0, dtype=tf.float32, shape=(xsize[0],))
+        baseline = tf.constant(value=-30.0, dtype=tf.float32)
         base_prob = tf.nn.sigmoid(baseline)
 #        print(base_prob.shape)
 #        print(base_prob)
         casePred = 1-tf.reduce_prod(1-out, axis=1)*(1-base_prob)
+#        print(casePred.shape)
         return nodulePred, casePred, out
 
 
 
 if __name__ == '__main__':
-    X = tf.placeholder(tf.float32, shape=(100, 3, 1, 128, 128, 128))
-    coord = tf.placeholder(tf.float32, shape=(100, 3, 3, 32, 32, 32))
+    X = tf.placeholder(tf.float32, shape=(None, 3, 1, 128, 128, 128))
+    coord = tf.placeholder(tf.float32, shape=(None, 3, 3, 32, 32, 32))
 
     net1 = DecetorNet()
 

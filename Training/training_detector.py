@@ -6,18 +6,21 @@ import os
 import time
 import tensorflow as tf
 
+import sys
+sys.path.append("/Users/junmaa/workspace/Kaggle_NDSB/AIHealth")
+
 # start prepare the trainning data
 
 print("Start to prepare the trainning data.")
 
 print("Preprocessing the kaggle data")
 
-full_prep(step1=True, step2=True)
+#full_prep(step1=True, step2=True)
 
-print("Preprocessing the luna data")
-prepare_luna()
-preprocess_luna()
-print("Finish the preprocessing")
+#print("Preprocessing the luna data")
+#prepare_luna()
+#preprocess_luna()
+#print("Finish the preprocessing")
 
 net_config, net, loss, get_pbb = get_model()
 

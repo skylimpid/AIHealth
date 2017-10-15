@@ -1,6 +1,41 @@
 import tensorflow as tf
 from Net.tensorflow_model.DetectorNet import DecetorNet
 
+config = {}
+config['topk'] = 5
+config['resample'] = None
+config['preload_train'] = True
+config['preload_val'] = True
+
+config['padmask'] = False
+
+config['datadir'] = config_training['preprocess_result_path']
+config['bboxpath'] = config_training['bbox_path']
+config['labelfile'] = './full_label.csv'
+
+config['crop_size'] = [96,96,96]
+config['scaleLim'] = [0.85,1.15]
+config['radiusLim'] = [6,100]
+config['jitter_range'] = 0.15
+config['isScale'] = True
+
+config['random_sample'] = True
+config['T'] = 1
+config['topk'] = 5
+config['stride'] = 4
+config['augtype'] = {'flip':True,'swap':True,'rotate':True,'scale':True}
+
+config['detect_th'] = 0.05
+config['conf_th'] = -1
+config['nms_th'] = 0.05
+config['filling_value'] = 160
+
+config['startepoch'] = 20
+config['lr_stage'] = np.array([50,100,140,160,180])
+config['lr'] = [0.01,0.001,0.0001,0.00001,0.000001]
+config['miss_ratio'] = 1
+config['miss_thresh'] = 0.03
+
 class ClassiferNet(object):
 
     DATA_FORMAT = 'channels_first'
@@ -52,7 +87,9 @@ class ClassiferNet(object):
 #        print(casePred.shape)
         return nodulePred, casePred, out
 
-
+def get_model(trained_detectorNet):
+    net = ClassiferNet(trained_detectorNet)
+    return config, net
 
 if __name__ == '__main__':
     X = tf.placeholder(tf.float32, shape=(None, 3, 1, 128, 128, 128))

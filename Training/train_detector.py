@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
-from Net.Loss import hard_mining
+from Net.Detector_Net_Loss import hard_mining
 
 from Training.configuration_training import cfg
 

@@ -10,7 +10,7 @@ import tensorflow as tf
 
 class TrainingClassifierData(DataSet):
 
-    def __init__(self, split, config, phase='train'):
+    def __init__(self, preprocess_result_dir, bboxpath_dir, labelfile, split, config,  phase='train'):
         assert (phase == 'train' or phase == 'val' or phase == 'test')
 
         self.random_sample = config['random_sample']
@@ -21,16 +21,16 @@ class TrainingClassifierData(DataSet):
         self.augtype = config['augtype']
         # self.labels = np.array(pandas.read_csv(config['labelfile']))
 
-        datadir = config['datadir']
-        bboxpath = config['bboxpath']
+        datadir = preprocess_result_dir
+        bboxpath = bboxpath_dir
         self.phase = phase
         self.candidate_box = []
         self.pbb_label = []
 
         idcs = split
         self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in idcs]
-        labels = np.array(pandas.read_csv(config['labelfile']))
         if phase != 'test':
+            labels = np.array(pandas.read_csv(labelfile))
             self.yset = np.array([labels[labels[:, 0] == f.split('-')[0].split('_')[0], 1] for f in split]).astype(
                 'int')
         idcs = [f.split('-')[0] for f in idcs]
@@ -55,6 +55,8 @@ class TrainingClassifierData(DataSet):
             self.candidate_box.append(pbb)
             self.pbb_label.append(np.array(pbb_label))
         self.crop = simpleCrop(config, phase)
+        self.index = 0
+        self.length = self.__len__()
 
     def __getitem__(self, idx, split=None):
         t = time.time()
@@ -92,14 +94,73 @@ class TrainingClassifierData(DataSet):
 
         if self.phase != 'test':
             y = np.array([self.yset[idx]])
-            return tf.stack(croplist.astype(float)), tf.stack(coordlist.astype(float)), \
-                   tf.stack(isnodlist.astype(int)), tf.stack(y)
+            return croplist, coordlist, isnodlist, y
         else:
-            return tf.stack(croplist.astype(float)), tf.stack(coordlist.astype(float)), \
-                   tf.stack(isnodlist.astype(int))
+            return croplist, coordlist, isnodlist
 
     def __len__(self):
         if self.phase != 'test':
             return len(self.candidate_box)
         else:
             return len(self.candidate_box)
+
+    def getNextBatch(self, batch_size):
+        final_cropList = None
+        final_coordlist = None
+        final_isnodlist = None
+        final_y = None
+
+        if self.phase != 'test':
+            for i in range(batch_size):
+                croplist, coordlist, isnodlist, y = self.__getitem__(self.index)
+
+                if final_cropList is None:
+                    final_cropList = np.expand_dims(croplist, axis=0)
+                else:
+                    final_cropList = np.append(final_cropList, np.expand_dims(croplist, axis=0), axis=0)
+
+                if final_coordlist is None:
+                    final_coordlist = np.expand_dims(coordlist, axis=0)
+                else:
+                    final_coordlist = np.append(final_coordlist, np.expand_dims(coordlist, axis=0), axis=0)
+
+                if final_isnodlist is None:
+                    final_isnodlist = np.expand_dims(isnodlist, axis=0)
+                else:
+                    final_isnodlist = np.append(final_isnodlist, np.expand_dims(isnodlist, axis=0), axis=0)
+
+                if final_y is None:
+                    final_y = np.expand_dims(y, axis=0)
+                else:
+                    final_y = np.append(final_y, np.expand_dims(y, axis=0), axis=0)
+
+                self.index = self.index + 1
+            return final_cropList, final_coordlist, final_isnodlist, final_y
+        else:
+            for i in range(batch_size):
+                croplist, coordlist, isnodlist = self.__getitem__(self.index)
+
+                if final_cropList is None:
+                    final_cropList = np.expand_dims(croplist, axis=0)
+                else:
+                    final_cropList = np.append(final_cropList, np.expand_dims(croplist, axis=0), axis=0)
+
+                if final_coordlist is None:
+                    final_coordlist = np.expand_dims(coordlist, axis=0)
+                else:
+                    final_coordlist = np.append(final_coordlist, np.expand_dims(coordlist, axis=0), axis=0)
+
+                if final_isnodlist is None:
+                    final_isnodlist = np.expand_dims(isnodlist, axis=0)
+                else:
+                    final_isnodlist = np.append(final_isnodlist, np.expand_dims(isnodlist, axis=0), axis=0)
+
+                self.index = self.index + 1
+            return final_cropList, final_coordlist, final_isnodlist
+
+
+    def hasNextBatch(self):
+        return self.index <= self.length
+
+    def reset(self):
+        self.index = 0

@@ -1,5 +1,5 @@
 import tensorflow as tf
-from Net.Loss import Loss
+from Net.Detector_Net_Loss import DetectorNetLoss
 from Utils.utils import GetPBB
 
 
@@ -311,7 +311,7 @@ class DecetorNet(object):
 
 def get_model():
     net = DecetorNet()
-    loss = Loss(config['num_hard'])
+    loss = DetectorNetLoss(config['num_hard'])
     get_pbb = GetPBB(config)
     return config, net, loss, get_pbb
 

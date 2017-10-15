@@ -37,6 +37,7 @@ __C.DIR.kaggle_annos_path = [DATA_BASE_DIR + 'kaggle_anno/labels/label_job5.csv'
                              DATA_BASE_DIR + 'kaggle_anno/labels/label_job4_1.csv',
                              DATA_BASE_DIR + 'kaggle_anno/labels/label_job0.csv',
                              DATA_BASE_DIR + 'kaggle_anno/labels/label_qualified.csv']
+__C.Dir.kaggle_full_labels = DATA_BASE_DIR + 'kaggle_anno/labels/full_label.csv'
 
 __C.DIR.bbox_path = DATA_BASE_DIR + 'results/bbox/'
 

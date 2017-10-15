@@ -9,7 +9,7 @@ def hard_mining(neg_output, neg_labels, num_hard):
     return neg_output, neg_labels
 
 
-class Loss():
+class DetectorNetLoss():
     def __init__(self, num_hard=0):
         self.num_hard = num_hard
 
@@ -92,7 +92,7 @@ class Loss():
 
 if __name__ == "__main__":
 
-    loss_object = Loss()
+    loss_object = DetectorNetLoss()
     labels = tf.placeholder(tf.float32, shape=[100, 32, 32, 32, 3, 5])
     output = tf.placeholder(tf.float32, shape=[100, 32, 32, 32, 3, 5])
 

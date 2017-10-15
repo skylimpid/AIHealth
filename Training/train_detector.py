@@ -13,15 +13,13 @@ class DetectorTrainer(object):
     Initializer
 
     """
-    def __init__(self, config):
+    def __init__(self, cfg):
 
-        # TO-DO: Initialize more parameters
-        self.config = config
-        datadir = cfg.DIR.preprocess_result_path
-        # TO-DO: fill in the arguments in the initializer.
+        self.cfg = cfg
+        datadir = self.cfg.DIR.preprocess_result_path
         self.build_model()
         self.dataset = TrainingDetectorData(datadir,
-                                            'Classifier/npy/full.npy',
+                                            '/Users/xuan/lung_cancer_data/full.npy',
                                             self.net_config,
                                             phase='train')
 
@@ -41,13 +39,13 @@ class DetectorTrainer(object):
 
     def train(self, sess):
 
-        for epoch in range(0, self.config['num_of_epoch']):
+        for epoch in range(0, self.cfg.TRAIN.EPOCHS):
 
             batch_count = 1
 
             while self.dataset.hasNextBatch():
 
-                batch_data, batch_labels, batch_coord = self.dataset.getNextBatch(self.config['batch_size'])
+                batch_data, batch_labels, batch_coord = self.dataset.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
 
                 if (self.has_positive_in_label(batch_labels)):
@@ -58,7 +56,7 @@ class DetectorTrainer(object):
                     sess.run([self.loss_2_optimizer],
                              feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
 
-                if batch_count % self.config['display_step']:
+                if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
                     print("Current batch is %d" % batch_count)
 
                 batch_count += 1
@@ -86,8 +84,8 @@ class DetectorTrainer(object):
             = loss_object.getLoss(out, self.labels, train=True)
 
 
-        self.loss_1_optimizer = tf.train.AdamOptimizer(learning_rate=self.config['learning_rate']).minimize(self.loss_1)
-        self.loss_2_optimizer = tf.train.AdamOptimizer(learning_rate=self.config['learning_rate']).minimize(self.loss_2)
+        self.loss_1_optimizer = tf.train.AdamOptimizer(learning_rate=self.cfg.TRAIN.LEARNING_RATE).minimize(self.loss_1)
+        self.loss_2_optimizer = tf.train.AdamOptimizer(learning_rate=self.cfg.TRAIN.LEARNING_RATE).minimize(self.loss_2)
 
 
 
@@ -101,9 +99,7 @@ class DetectorTrainer(object):
 
 if __name__ == "__main__":
 
-    config = {'batch_size':1, 'learning_rate':0.01, 'num_of_epoch':10, 'display_step':2}
-
-    instance = DetectorTrainer(config)
+    instance = DetectorTrainer(cfg)
     init = tf.global_variables_initializer()
 
 

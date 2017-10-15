@@ -21,7 +21,7 @@ class DetectorTrainer(object):
         # TO-DO: fill in the arguments in the initializer.
         self.build_model()
         self.dataset = TrainingDetectorData(datadir,
-                                            '/home/xuan/lung_cancer_data/full.npy',
+                                            'Classifier/npy/full.npy',
                                             self.net_config,
                                             phase='train')
 

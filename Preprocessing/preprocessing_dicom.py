@@ -1,5 +1,4 @@
 import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import dicom
 import os
 import scipy.ndimage
@@ -233,7 +232,7 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
     return bw1, bw2, bw
 
 
-def step1_python(case_path):
+def dicom_python(case_path):
     case = load_scan(case_path)
     case_pixels, spacing = get_pixels_hu(case)
     bw = binarize_per_slice(case_pixels, spacing)
@@ -255,7 +254,7 @@ if __name__ == '__main__':
     INPUT_FOLDER = "/Users/xuan/lung_cancer_data/sample_images"
     patients = os.listdir(INPUT_FOLDER)
     patients.sort()
-    case_pixels, m1, m2, spacing = step1_python(os.path.join(INPUT_FOLDER, patients[5]))
+    case_pixels, m1, m2, spacing = dicom_python(os.path.join(INPUT_FOLDER, patients[5]))
     plt.imshow(m1[60])
     plt.figure()
     plt.imshow(m2[60])

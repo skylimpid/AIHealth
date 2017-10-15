@@ -1,14 +1,8 @@
 import os
 import shutil
-from Training.configuration_training import cfg
 
-from scipy.io import loadmat
 import numpy as np
-import h5py
-import pandas
-import scipy
 from scipy.ndimage.interpolation import zoom
-from skimage import measure
 import SimpleITK as sitk
 from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
 from skimage.morphology import convex_hull_image
@@ -17,7 +11,7 @@ from multiprocessing import Pool
 from functools import partial
 import sys
 sys.path.append('../Preprocessing')
-from Preprocessing.step1 import step1_python
+from Preprocessing.preprocessing_dicom import dicom_python
 import warnings
 
 
@@ -98,7 +92,7 @@ def savenpy(id, annos, filelist, data_path, prep_folder):
     label = annos[annos[:, 0] == name]
     label = label[:, [3, 1, 2, 4]].astype('float')
 
-    im, m1, m2, spacing = step1_python(os.path.join(data_path, name))
+    im, m1, m2, spacing = dicom_python(os.path.join(data_path, name))
     Mask = m1 + m2
 
     newshape = np.round(np.array(Mask.shape) * spacing / resolution)
@@ -150,23 +144,23 @@ def savenpy(id, annos, filelist, data_path, prep_folder):
     print(name)
 
 
-def full_prep(step1=True, step2=True):
+def full_prep(cfg, step1=True, step2=True):
     warnings.filterwarnings("ignore")
 
     # preprocess_result_path = './prep_result'
     prep_folder = cfg.DIR.preprocess_result_path
-    data_path = cfg.DIR.stage1_data_path
+    data_path = cfg.DIR.kaggle_data_path
     finished_flag = '.flag_prepkaggle'
 
     if not os.path.exists(finished_flag):
-        alllabelfiles = cfg.DIR.stage1_annos_path
+        alllabelfiles = cfg.DIR.kaggle_annos_path
         tmp = []
         for f in alllabelfiles:
             content = np.array(pandas.read_csv(f))
             content = content[content[:, 0] != np.nan]
             tmp.append(content[:, :5])
         alllabel = np.concatenate(tmp, 0)
-        filelist = os.listdir(cfg.DIR.stage1_data_path)
+        filelist = os.listdir(cfg.DIR.kaggle_data_path)
 
         if not os.path.exists(prep_folder):
             os.mkdir(prep_folder)
@@ -264,10 +258,10 @@ def savenpy_luna(id, annos, filelist, luna_segment, luna_data, savepath):
     print(name)
 
 
-def preprocess_luna():
-    luna_segment = cfg.DIR.luna_segment_data
+def preprocess_luna(cfg):
+    luna_segment = cfg.DIR.luna_intermediate_segment_data
     savepath = cfg.DIR.preprocess_result_path
-    luna_data = cfg.DIR.luna_data
+    luna_data = cfg.DIR.luna_intermediate_data
     luna_label = cfg.DIR.luna_label
     finished_flag = '.flag_preprocessluna'
     print('starting preprocessing luna')
@@ -291,13 +285,13 @@ def preprocess_luna():
     f = open(finished_flag, "w+")
 
 
-def prepare_luna():
+def prepare_luna(cfg):
     print('start changing luna name')
     luna_raw = cfg.DIR.luna_raw
     luna_abbr = cfg.DIR.luna_abbr
-    luna_data = cfg.DIR.luna_data
+    luna_data = cfg.DIR.luna_intermediate_data
     luna_segment = cfg.DIR.luna_segment_raw
-    luna_segment_data = cfg.DIR.luna_segment_data
+    luna_segment_data = cfg.DIR.luna_intermediate_segment_data
     finished_flag = '.flag_prepareluna'
 
     if not os.path.exists(finished_flag):
@@ -382,11 +376,3 @@ def prepare_luna():
                 f.writelines(content)
     print('end changing luna name')
     f = open(finished_flag, "w+")
-
-
-if __name__ == '__main__':
-    # prepare the data with manually labelled
-    full_prep(step1=True, step2=True)
-
-    #prepare_luna()
-    #preprocess_luna()

@@ -3,7 +3,6 @@ from Utils.DataSet import DataSet
 from Utils.DataSetUtils import Crop, DetectorDataAugment, LabelMapping
 import time
 import os
-import tensorflow as tf
 
 
 class TrainingDetectorData(DataSet):
@@ -57,6 +56,7 @@ class TrainingDetectorData(DataSet):
         self.crop = Crop(config)
         self.label_mapping = LabelMapping(config, self.phase)
         self.index = 0
+        self.length = self.__len__()
 
     def __getitem__(self, idx, split=None):
         t = time.time()
@@ -97,7 +97,7 @@ class TrainingDetectorData(DataSet):
             sample = (sample.astype(np.float32) - 128) / 128
             # if filename in self.kagglenames and self.phase=='train':
             #    label[label==-1]=0
-            return tf.stack(sample), tf.stack(label), coord
+            return sample.tolist(), label.tolist(), coord.tolist()
         else:
             imgs = np.load(self.filenames[idx])
             bboxes = self.sample_bboxes[idx]
@@ -119,7 +119,7 @@ class TrainingDetectorData(DataSet):
                                                     margin=self.split_comber.margin / self.stride)
             assert np.all(nzhw == nzhw2)
             imgs = (imgs.astype(np.float32) - 128) / 128
-            return tf.stack(imgs), bboxes, tf.stack(coord2), np.array(nzhw)
+            return imgs, bboxes, coord2, np.array(nzhw)
 
     def __len__(self):
         if self.phase == 'train':
@@ -141,7 +141,7 @@ class TrainingDetectorData(DataSet):
                 labels.append(label)
                 coords.append(coord)
                 self.index = self.index + 1
-            return tf.stack(samples), tf.stack(labels), tf.stack(coords)
+            return samples, labels, coords
         else:
             for i in range(batch_size):
                 sample, label, coord, nzhw = self.__getitem__(self.index)
@@ -150,6 +150,11 @@ class TrainingDetectorData(DataSet):
                 coords.append(coord)
                 nzhws.append(nzhw)
                 self.index = self.index + 1
-            return tf.stack(samples), tf.stack(labels), tf.stack(coords), tf.stack(nzhws)
+            return samples, labels, coords, nzhws
 
 
+    def hasNextBatch(self):
+        return self.index <= self.length
+
+    def reset(self):
+        self.index = 0

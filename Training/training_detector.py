@@ -7,7 +7,7 @@ import time
 import tensorflow as tf
 
 import sys
-sys.path.append("/Users/junmaa/workspace/Kaggle_NDSB/AIHealth")
+sys.path.append("/home/xuan/AIHealth")
 
 # start prepare the trainning data
 
@@ -15,12 +15,12 @@ print("Start to prepare the trainning data.")
 
 print("Preprocessing the kaggle data")
 
-#full_prep(step1=True, step2=True)
+full_prep(step1=True, step2=True)
 
-#print("Preprocessing the luna data")
-#prepare_luna()
-#preprocess_luna()
-#print("Finish the preprocessing")
+print("Preprocessing the luna data")
+prepare_luna()
+preprocess_luna()
+print("Finish the preprocessing")
 
 net_config, net, loss, get_pbb = get_model()
 
@@ -35,18 +35,18 @@ datadir = cfg.DIR.preprocess_result_path
 
 dataset = TrainingDetectorData(
     datadir,
-    '/Users/xuan/lung_cancer_data/full.npy',
+    '/home/xuan/lung_cancer_data/full.npy',
     net_config,
     phase='train')
 
 
-
+"""
 imgs, bbox, coord = dataset.__getitem__(0)
 
 print(imgs.shape)
 print(bbox.shape)
 print(coord.shape)
-
+"""
 
 imgs, labels, coords = dataset.getNextBatch(1)
 print(imgs.shape)
@@ -54,6 +54,7 @@ print(labels.shape)
 print(coords.shape)
 
 
+"""
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
@@ -81,4 +82,4 @@ with tf.Session() as sess:
     sess.run(train_op, feed_dict=feed_dict)
 
 
-
+"""

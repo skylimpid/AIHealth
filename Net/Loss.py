@@ -17,7 +17,8 @@ class Loss():
         batch_size = labels.get_shape().as_list()
         output = tf.reshape(output, shape=(-1, 5))
         labels = tf.reshape(labels, shape= (-1, 5))
-        #print(labels.shape)
+
+
         pos_idcs = labels[:, 0] > 0.5
         #print(pos_idcs.shape)
         #pos_idcs = pos_idcs.unsqueeze(1).expand(pos_idcs.size(0), 5)
@@ -25,54 +26,87 @@ class Loss():
         for i in range(5):
             pos_idcs_list.append(pos_idcs)
         pos_idcs = tf.stack(pos_idcs_list, axis=1)
+
         #print(pos_idcs.shape)
         #pos_output = tf.reshape(output[pos_idcs], shape=(-1, 5))
+        #print(tf.boolean_mask(output,pos_idcs).eval())
+
         pos_output=tf.convert_to_tensor(tf.reshape(tf.boolean_mask(output,pos_idcs),(-1,5)))
         #pos_labels = tf.reshape(labels[pos_idcs], shape=(-1, 5))
         pos_labels=tf.convert_to_tensor(tf.reshape(tf.boolean_mask(labels,pos_idcs),(-1,5)))
 
+        #print(pos_output.eval().shape[0])
+
         neg_idcs = labels[:, 0] < -0.5
         #neg_output = output[:, 0][neg_idcs]
-        print(output[:,0].shape)
+        #print(output[:,0].shape)
         neg_output=tf.boolean_mask(output[:,0], neg_idcs)
         #neg_labels = labels[:, 0][neg_idcs]
         neg_labels=tf.boolean_mask(labels[:, 0], neg_idcs)
 
-        if self.num_hard > 0 and train:
-            neg_output, neg_labels = hard_mining(neg_output, neg_labels, self.num_hard * batch_size)
+        #if self.num_hard > 0 and train:
+        #    neg_output, neg_labels = hard_mining(neg_output, neg_labels, self.num_hard * batch_size)
         neg_prob = tf.nn.sigmoid(neg_output)
 
-        if len(pos_output) > 0:
-            pos_prob = tf.nn.sigmoid(pos_output[:, 0])
-            pz, ph, pw, pd = pos_output[:, 1], pos_output[:, 2], pos_output[:, 3], pos_output[:, 4]
-            lz, lh, lw, ld = pos_labels[:, 1], pos_labels[:, 2], pos_labels[:, 3], pos_labels[:, 4]
 
-            regress_losses = [
-                tf.losses.huber_loss(pz, lz),
-                tf.losses.huber_loss(ph, lh),
-                tf.losses.huber_loss(pw, lw),
-                tf.losses.huber_loss(pd, ld)]
-            regress_losses_data = [l.data[0] for l in regress_losses]
-            classify_loss = 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                pos_prob, pos_labels[:, 0]) + 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                neg_prob, neg_labels + 1)
-            pos_correct = (pos_prob.data >= 0.5).sum()
-            pos_total = len(pos_prob)
+        #if pos_output.shape[0] > 0:
+        pos_prob = tf.nn.sigmoid(pos_output[:, 0])
+        pz, ph, pw, pd = pos_output[:, 1], pos_output[:, 2], pos_output[:, 3], pos_output[:, 4]
+        lz, lh, lw, ld = pos_labels[:, 1], pos_labels[:, 2], pos_labels[:, 3], pos_labels[:, 4]
 
-        else:
-            regress_losses = [0, 0, 0, 0]
-            classify_loss = 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                neg_prob, neg_labels + 1)
-            pos_correct = 0
-            pos_total = 0
-            regress_losses_data = [0, 0, 0, 0]
-        classify_loss_data = classify_loss.data[0]
+        regress_losses = [
+            tf.losses.huber_loss(pz, lz),
+            tf.losses.huber_loss(ph, lh),
+            tf.losses.huber_loss(pw, lw),
+            tf.losses.huber_loss(pd, ld)]
+        #regress_losses_data_1 = [l[0] for l in regress_losses]
+        classify_loss_1 = 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=pos_prob, labels=pos_labels[:, 0]) + 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=neg_prob, labels=(neg_labels + 1))
+        pos_correct = tf.reduce_sum(tf.cast(pos_prob >= 0.5, dtype=tf.int32))
+        pos_total = pos_prob.shape[0]
 
-        loss = classify_loss
+        # else
+        #regress_losses_2 = [0, 0, 0, 0]
+        classify_loss_2 = 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=neg_prob, labels=(neg_labels + 1))
+        #pos_correct = 0
+        #pos_total = 0
+        #regress_losses_data = [0, 0, 0, 0]
+
+
+        #classify_loss_data = classify_loss_[0]
+
+        loss1 = classify_loss_1
+        loss2 = classify_loss_2
         for regress_loss in regress_losses:
-            loss += regress_loss
+            loss1 += regress_loss
 
-        neg_correct = (neg_prob.data < 0.5).sum()
-        neg_total = len(neg_prob)
 
-        return [loss, classify_loss_data] + regress_losses_data + [pos_correct, pos_total, neg_correct, neg_total]
+        neg_correct = tf.reduce_sum(tf.cast(neg_prob < 0.5, dtype=tf.int32))
+        neg_total = neg_prob.shape[0]
+
+        return loss1, loss2
+        #return [loss, classify_loss_data] + regress_losses_data + [pos_correct, pos_total, neg_correct, neg_total]
+
+
+if __name__ == "__main__":
+
+    loss_object = Loss()
+    labels = tf.placeholder(tf.float32, shape=[100, 32, 32, 32, 3, 5])
+    output = tf.placeholder(tf.float32, shape=[100, 32, 32, 32, 3, 5])
+
+    print(loss_object.getLoss(labels, output))
+
+"""
+    with tf.Session() as sess:
+        labels = tf.random_uniform(shape=[100,32,32,32,3,5])
+        output = tf.random_uniform(shape=[100,32,32,32,3,5])
+
+
+
+        print(sess.run(labels))
+        sess.run(output)
+
+        sess.run(print(loss_object.getLoss(labels, output)))
+"""

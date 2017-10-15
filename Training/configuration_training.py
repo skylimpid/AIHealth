@@ -5,8 +5,8 @@ cfg = __C
 
 # Define data dir configurations
 
-#DATA_BASE_DIR = "/Users/xuan/lung_cancer_data/"
-DATA_BASE_DIR = "/Users/junmaa/workspace/Kaggle_NDSB/data/"
+DATA_BASE_DIR = "/home/xuan/lung_cancer_data/"
+#DATA_BASE_DIR = "/Users/junmaa/workspace/Kaggle_NDSB/data/"
 
 __C.DIR = edict()
 __C.DIR.stage1_data_path = DATA_BASE_DIR + 'sample_images'

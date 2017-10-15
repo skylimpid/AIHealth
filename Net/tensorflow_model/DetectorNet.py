@@ -326,3 +326,5 @@ if __name__ == '__main__':
     coord = tf.placeholder(tf.float32, shape=(None, 3, 32, 32, 32))
     net = DecetorNet()
     net.getDetectorNet(X, coord)
+
+    print (get_model())

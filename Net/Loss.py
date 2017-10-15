@@ -60,16 +60,16 @@ class Loss():
             tf.losses.huber_loss(pw, lw),
             tf.losses.huber_loss(pd, ld)]
         #regress_losses_data_1 = [l[0] for l in regress_losses]
-        classify_loss_1 = 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=pos_prob, labels=pos_labels[:, 0]) + 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=neg_prob, labels=(neg_labels + 1))
+        classify_loss_1 = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=pos_prob, labels=pos_labels[:, 0])) + tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=neg_prob, labels=(neg_labels + 1)))
         pos_correct = tf.reduce_sum(tf.cast(pos_prob >= 0.5, dtype=tf.int32))
         pos_total = pos_prob.shape[0]
 
         # else
         #regress_losses_2 = [0, 0, 0, 0]
-        classify_loss_2 = 0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=neg_prob, labels=(neg_labels + 1))
+        classify_loss_2 = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=neg_prob, labels=(neg_labels + 1)))
         #pos_correct = 0
         #pos_total = 0
         #regress_losses_data = [0, 0, 0, 0]
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     print(loss_object.getLoss(labels, output))
 
-"""
+
     with tf.Session() as sess:
         labels = tf.random_uniform(shape=[100,32,32,32,3,5])
         output = tf.random_uniform(shape=[100,32,32,32,3,5])
@@ -108,5 +108,4 @@ if __name__ == "__main__":
         print(sess.run(labels))
         sess.run(output)
 
-        sess.run(print(loss_object.getLoss(labels, output)))
-"""
+        sess.run(loss_object.getLoss(labels, output))

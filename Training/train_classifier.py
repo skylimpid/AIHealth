@@ -21,7 +21,7 @@ class ClassiferTrainer(object):
         self.dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
                                               cfg.DIR.bbox_path,
                                               cfg.Dir.kaggle_full_labels,
-                                              '/Users/xuan/lung_cancer_data/full.npy',
+                                              'Classifier/npy/full.npy',
                                               self.net_config, phase='train')
 
     def train(self, sess):

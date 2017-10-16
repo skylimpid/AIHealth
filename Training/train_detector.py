@@ -19,7 +19,7 @@ class DetectorTrainer(object):
         datadir = self.cfg.DIR.preprocess_result_path
         self.build_model()
         self.dataset = TrainingDetectorData(datadir,
-                                            '/Users/xuan/lung_cancer_data/full.npy',
+                                            'Classifier/npy/full.npy',
                                             self.net_config,
                                             phase='train')
 

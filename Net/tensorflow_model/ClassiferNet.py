@@ -1,5 +1,7 @@
 import tensorflow as tf
+import numpy as np
 from Net.tensorflow_model.DetectorNet import DecetorNet
+from Training.configuration_training import cfg
 
 config = {}
 config['topk'] = 5
@@ -9,8 +11,8 @@ config['preload_val'] = True
 
 config['padmask'] = False
 
-config['datadir'] = config_training['preprocess_result_path']
-config['bboxpath'] = config_training['bbox_path']
+config['datadir'] = cfg.DIR.preprocess_result_path
+config['bboxpath'] = cfg.DIR.bbox_path
 config['labelfile'] = './full_label.csv'
 
 config['crop_size'] = [96,96,96]
@@ -41,6 +43,9 @@ class ClassiferNet(object):
     DATA_FORMAT = 'channels_first'
 
     def __init__(self, detectorNet, img_row=128, img_col=128, img_depth=128, img_channel=1):
+        if detectorNet == None:
+            detectorNet = DecetorNet()
+
         self.detectorNet = detectorNet
         self.img_row = img_row
         self.img_col = img_col
@@ -53,10 +58,10 @@ class ClassiferNet(object):
 #        print(X.shape)
         coordsize = coord.get_shape().as_list()
 #        print(coordsize)
-        coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
+        coord = tf.reshape(coord, (-1, coordsize[1], coordsize[2], coordsize[3], coordsize[4]))
         noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
-        nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))
+        nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]))
 
         featshape = noduleFeat.get_shape().as_list()
 #        print(featshape)

@@ -1,0 +1,6 @@
+*.pyc
+*.ipynb*
+training/.flag*
+prediction*.csv
+.DS_Store
+.idea/

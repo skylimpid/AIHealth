@@ -1,9 +1,10 @@
-import numpy as np
-from Utils.DataSet import DataSet
-from Utils.DataSetUtils import augment, Crop, LabelMapping
 import os
 import time
+import numpy as np
 import tensorflow as tf
+from Utils.DataSet import DataSet
+from Utils.DataSetUtils import augment, Crop, LabelMapping
+
 
 class PredictDetectorData(DataSet):
     def __init__(self, split, config, phase='train',split_comb=None):

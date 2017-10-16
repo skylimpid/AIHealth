@@ -1,18 +1,20 @@
 import os
+import sys
 import shutil
-
+import pandas
+import warnings
 import numpy as np
-from scipy.ndimage.interpolation import zoom
 import SimpleITK as sitk
+
+from Preprocessing.preprocessing_dicom import dicom_python
+from scipy.ndimage.interpolation import zoom
 from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
 from skimage.morphology import convex_hull_image
-import pandas
 from multiprocessing import Pool
 from functools import partial
-import sys
+
+
 sys.path.append('../Preprocessing')
-from Preprocessing.preprocessing_dicom import dicom_python
-import warnings
 
 
 def resample(imgs, spacing, new_spacing, order=2):
@@ -374,5 +376,6 @@ def prepare_luna(cfg):
                 print(content[-1])
             with open(os.path.join(luna_segment_data, file), 'w') as f:
                 f.writelines(content)
+
     print('end changing luna name')
     f = open(finished_flag, "w+")

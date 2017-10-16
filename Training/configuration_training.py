@@ -1,14 +1,11 @@
 from easydict import EasyDict as edict
+from Training.constants import DATA_BASE_DIR
 
 __C = edict()
 cfg = __C
 
 # Define data dir configurations
 __C.DIR = edict()
-
-
-# The base dir which contains the raw data. We will also save the preprocessed result in this directory
-DATA_BASE_DIR = "/Users/xuan/lung_cancer_data/"
 
 # The directory which has the kaggle raw data
 __C.DIR.kaggle_data_path = DATA_BASE_DIR + 'sample_images'

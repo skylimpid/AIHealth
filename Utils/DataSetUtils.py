@@ -1,12 +1,13 @@
-import numpy as np
-import collections
 import random
-from scipy.ndimage import zoom
 import warnings
+import collections
+import numpy as np
+import tensorflow as tf
+from scipy.ndimage import zoom
 from scipy.ndimage.interpolation import rotate
 from scipy.ndimage.morphology import binary_dilation,generate_binary_structure
 from tensorflow.contrib.framework import is_tensor
-import tensorflow as tf
+
 
 def augment(sample, target, bboxes, coord, ifflip=True, ifrotate=True, ifswap=True):
     #                     angle1 = np.random.rand()*180

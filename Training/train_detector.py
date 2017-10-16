@@ -2,16 +2,14 @@ import tensorflow as tf
 
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
-from Net.Detector_Net_Loss import hard_mining
-
 from Training.configuration_training import cfg
+
 
 class DetectorTrainer(object):
 
 
     """
     Initializer
-
     """
     def __init__(self, cfg):
 
@@ -36,7 +34,6 @@ class DetectorTrainer(object):
         return False
 
 
-
     def train(self, sess):
 
         for epoch in range(0, self.cfg.TRAIN.EPOCHS):
@@ -49,7 +46,6 @@ class DetectorTrainer(object):
 
 
                 if (self.has_positive_in_label(batch_labels)):
-
                     sess.run([self.loss_1_optimizer],
                              feed_dict={self.X:batch_data, self.coord:batch_coord, self.labels:batch_labels})
                 else:
@@ -65,16 +61,11 @@ class DetectorTrainer(object):
             self.dataset.reset()
 
 
-
-
-
-
     def build_model(self):
 
         self.X = tf.placeholder(tf.float32, shape=[None, 1, 128, 128, 128])
         self.coord = tf.placeholder(tf.float32, shape=[None, 3, 32, 32, 32])
         self.labels = tf.placeholder(tf.float32, shape=[None, 32, 32, 32, 3, 5])
-
 
         self.net_config, detector_net_object, loss_object, pbb = get_model()
 
@@ -83,10 +74,8 @@ class DetectorTrainer(object):
         [self.loss_1, self.loss_2] \
             = loss_object.getLoss(out, self.labels, train=True)
 
-
         self.loss_1_optimizer = tf.train.AdamOptimizer(learning_rate=self.cfg.TRAIN.LEARNING_RATE).minimize(self.loss_1)
         self.loss_2_optimizer = tf.train.AdamOptimizer(learning_rate=self.cfg.TRAIN.LEARNING_RATE).minimize(self.loss_2)
-
 
 
     def test(self):
@@ -101,7 +90,6 @@ if __name__ == "__main__":
 
     instance = DetectorTrainer(cfg)
     init = tf.global_variables_initializer()
-
 
     with tf.Session() as sess:
         sess.run(init)

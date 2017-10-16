@@ -103,8 +103,6 @@ if __name__ == "__main__":
         labels = tf.random_uniform(shape=[100,32,32,32,3,5])
         output = tf.random_uniform(shape=[100,32,32,32,3,5])
 
-
-
         print(sess.run(labels))
         sess.run(output)
 

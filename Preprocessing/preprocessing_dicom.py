@@ -1,11 +1,11 @@
-import numpy as np  # linear algebra
-import dicom
 import os
+import dicom
 import scipy.ndimage
-import matplotlib.pyplot as plt
+import numpy as np
+#import matplotlib.pyplot as plt
 
-from skimage import measure, morphology
-
+from skimage import measure
+from Training.constants import DATA_SAMPLE_DIR
 
 
 # load the dicom file and preprocess all the files to have the same slick thickness
@@ -251,7 +251,7 @@ def dicom_python(case_path):
 
 
 if __name__ == '__main__':
-    INPUT_FOLDER = "/Users/xuan/lung_cancer_data/sample_images"
+    INPUT_FOLDER = DATA_SAMPLE_DIR
     patients = os.listdir(INPUT_FOLDER)
     patients.sort()
     case_pixels, m1, m2, spacing = dicom_python(os.path.join(INPUT_FOLDER, patients[5]))

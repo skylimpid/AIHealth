@@ -1,11 +1,12 @@
-from Utils.DataSet import DataSet
 import os
-import numpy as np
+import pandas
 import time
+import numpy as np
+
+from Utils.DataSet import DataSet
 from Utils.utils import nms, iou
 from Utils.DataSetUtils import simpleCrop, sample, augment
-import pandas
-import tensorflow as tf
+
 
 
 class TrainingClassifierData(DataSet):

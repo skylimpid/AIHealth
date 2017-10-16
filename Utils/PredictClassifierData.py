@@ -1,9 +1,9 @@
-import numpy as np
-from Utils.DataSet import DataSet
 import os
 import time
-from Utils.utils import nms, iou
+import numpy as np
 import tensorflow as tf
+from Utils.utils import nms, iou
+from Utils.DataSet import DataSet
 from Utils.DataSetUtils import simpleCrop, sample, augment
 
 
@@ -52,6 +52,7 @@ class PredictClassifierData(DataSet):
             self.candidate_box.append(pbb)
             self.pbb_label.append(np.array(pbb_label))
         self.crop = simpleCrop(config, phase)
+
 
     def __getitem__(self, idx, split=None):
         t = time.time()

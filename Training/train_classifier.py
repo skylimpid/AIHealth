@@ -1,17 +1,15 @@
 import tensorflow as tf
 
 from Training.Classifier.TrainingClassifierData import TrainingClassifierData
-from Net.tensorflow_model.ClassiferNet  import get_model
+from Net.tensorflow_model.ClassiferNet import get_model
 from Net.Classifer_Net_Loss import ClassiferNetLoss
-
 from Training.configuration_training import cfg
+
 
 class ClassiferTrainer(object):
 
-
     """
     Initializer
-
     """
     def __init__(self, cfg, detectorNet):
 
@@ -22,7 +20,9 @@ class ClassiferTrainer(object):
                                               cfg.DIR.bbox_path,
                                               cfg.Dir.kaggle_full_labels,
                                               'Classifier/npy/full.npy',
-                                              self.net_config, phase='train')
+                                              self.net_config,
+                                              phase='train')
+
 
     def train(self, sess):
 
@@ -46,17 +46,12 @@ class ClassiferTrainer(object):
             self.dataset.reset()
 
 
-
-
-
-
     def build_model(self):
 
         self.X = tf.placeholder(tf.float32, shape=[None, 1, 128, 128, 128])
         self.coord = tf.placeholder(tf.float32, shape=[None, 3, 32, 32, 32])
         self.labels = tf.placeholder(tf.float32, shape=[None, 32, 32, 32, 3, 5])
         self.isnod = None
-
 
         self.net_config, classifer_net_object = get_model(self.detectorNet)
 
@@ -65,10 +60,7 @@ class ClassiferTrainer(object):
         loss_object = ClassiferNetLoss(self.net_config)
         self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, 3)
 
-
-
         self.loss_1_optimizer = tf.train.AdamOptimizer(learning_rate=self.cfg.TRAIN.LEARNING_RATE).minimize(self.loss)
-
 
 
     def test(self):
@@ -86,7 +78,6 @@ if __name__ == "__main__":
 
     instance = ClassiferTrainer(cfg, detectorNet)
     init = tf.global_variables_initializer()
-
 
     with tf.Session() as sess:
         sess.run(init)

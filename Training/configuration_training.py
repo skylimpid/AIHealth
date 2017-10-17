@@ -43,7 +43,7 @@ __C.DIR.save_dir = DATA_BASE_DIR + 'save'
 __C.DIR.preprocessing_backend = 'python'
 
 __C.DIR.detector_net_saver_dir = SYS_DIR + "/Trained_Models/DetectorNetWeight"
-__C.DIR.detector_net_saver_file_prefix = "detector_model_weights"
+__C.DIR.detector_net_saver_file_prefix = "detector_model_weights_iter_"
 
 __C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
 

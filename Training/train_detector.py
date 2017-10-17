@@ -3,6 +3,7 @@ import tensorflow as tf
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
+from Utils.split_combine import SplitComb
 import os
 import time
 
@@ -16,14 +17,8 @@ class DetectorTrainer(object):
     def __init__(self, cfg):
 
         self.cfg = cfg
-        if not os.path.exists(cfg.DIR.detector_net_saver_dir):
-            os.makedirs(cfg.DIR.detector_net_saver_dir)
 
         self.build_model()
-        self.data_set = TrainingDetectorData(self.cfg.DIR.preprocess_result_path,
-                                             self.cfg.DIR.detector_net_train_data_path,
-                                             self.net_config,
-                                             phase='train')
 
     def has_positive_in_label(self, labels):
 
@@ -39,15 +34,24 @@ class DetectorTrainer(object):
 
         saver = tf.train.Saver(max_to_keep=10)
 
+        if not os.path.exists(cfg.DIR.detector_net_saver_dir):
+            os.makedirs(cfg.DIR.detector_net_saver_dir)
+
+        # Get the training data
+        data_set = TrainingDetectorData(self.cfg.DIR.preprocess_result_path,
+                                        self.cfg.DIR.detector_net_train_data_path,
+                                        self.net_config,
+                                        phase='train')
+
         start_time = time.time()
 
         for epoch in range(0, self.cfg.TRAIN.EPOCHS):
 
             batch_count = 1
 
-            while self.data_set.hasNextBatch():
+            while data_set.hasNextBatch():
 
-                batch_data, batch_labels, batch_coord = self.data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
+                batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
                 if self.has_positive_in_label(batch_labels):
                     sess.run([self.loss_1_optimizer],
@@ -62,12 +66,15 @@ class DetectorTrainer(object):
                 batch_count += 1
 
             print("Epoch %d finished." % epoch)
-            self.data_set.reset()
-            if epoch != 0 and (epoch % cfg.TRAIN.SAVE_STEPS == 0 or epoch == (self.cfg.TRAIN.EPOCHS - 1)):
-                filename = (cfg.DIR.detector_net_saver_file_prefix + '_iter_{:d}'.format(epoch+1) + '.ckpt')
-                filename = os.path.join(cfg.DIR.detector_net_saver_dir, filename)
+            data_set.reset()
+            if epoch != 0 and epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
+                filename = self.cfg.DIR.detector_net_saver_file_prefix + '{:d}'.format(epoch+1)
+                filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=(epoch+1))
 
+        filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, (self.cfg.DIR.detector_net_saver_file_prefix
+                                                                      + 'final'))
+        saver.save(sess, filename)
         end_time = time.time()
 
         print("The total time used in training: {}".format(end_time-start_time))
@@ -97,10 +104,35 @@ class DetectorTrainer(object):
             self.loss_2, global_step=global_step)
 
     def test(self):
+
         pass
 
     def validate(self):
         pass
+
+    def predict(self, sess):
+
+        # load the previous trained detector_net model
+        saver = tf.train.Saver()
+        saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
+
+        # get input data
+        margin = 32
+        sidelen = 64
+        split_combine = SplitComb(side_len=sidelen, max_stride=self.net_config['max_stride'],
+                                  stride=self.net_config['stride'], margin=margin,
+                                  pad_value=self.net_config['pad_value'])
+        input_data = TrainingDetectorData(data_dir=self.cfg.DIR.preprocess_result_path,
+                                          split_path=self.cfg.DIR.detector_net_train_data_path,
+                                          config=self.net_config, split_comber=split_combine,
+                                          phase='test')
+        imgs, bboxes, coord2, nzhw = input_data.__getitem__(0)
+
+        #print(imgs.shape)
+        #print(bboxes.shape)
+        #print(coord2.shape)
+        #print(nzhw.shape)
+        #print(nzhw)
 
 
 if __name__ == "__main__":
@@ -110,4 +142,5 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         sess.run(init)
-        instance.train(sess)
+        #instance.train(sess)
+        instance.predict(sess)

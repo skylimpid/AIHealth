@@ -114,9 +114,9 @@ class TrainingDetectorData(DataSet):
             coord = np.concatenate([xx[np.newaxis, ...], yy[np.newaxis, ...], zz[np.newaxis, :]], 0).astype('float32')
             imgs, nzhw = self.split_comber.split(imgs)
             coord2, nzhw2 = self.split_comber.split(coord,
-                                                    side_len=self.split_comber.side_len / self.stride,
-                                                    max_stride=self.split_comber.max_stride / self.stride,
-                                                    margin=self.split_comber.margin / self.stride)
+                                                    side_len=int(self.split_comber.side_len / self.stride),
+                                                    max_stride=int(self.split_comber.max_stride / self.stride),
+                                                    margin=int(self.split_comber.margin / self.stride))
             assert np.all(nzhw == nzhw2)
             imgs = (imgs.astype(np.float32) - 128) / 128
             return imgs, bboxes, coord2, np.array(nzhw)

@@ -1,5 +1,5 @@
 from easydict import EasyDict as edict
-from Training.constants import DATA_BASE_DIR
+from Training.constants import DATA_BASE_DIR, SYS_DIR
 
 __C = edict()
 cfg = __C
@@ -42,10 +42,18 @@ __C.DIR.save_dir = DATA_BASE_DIR + 'save'
 
 __C.DIR.preprocessing_backend = 'python'
 
+__C.DIR.detector_net_saver_dir = SYS_DIR + "/Trained_Models/DetectorNetWeight"
+__C.DIR.detector_net_saver_file_prefix = "detector_model_weights"
+
+__C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
+
 # HyperParameters for Training.
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.01
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 100
 __C.TRAIN.MOMENTUM = 0.9
 __C.TRAIN.DISPLAY_STEPS = 2
-__C.TRAIN.BATCH_SIZE = 1
+__C.TRAIN.BATCH_SIZE = 2
 __C.TRAIN.EPOCHS = 10
+__C.TRAIN.SAVE_STEPS = 100
+

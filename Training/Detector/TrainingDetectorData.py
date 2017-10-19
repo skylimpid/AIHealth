@@ -119,7 +119,7 @@ class TrainingDetectorData(DataSet):
                                                     margin=int(self.split_comber.margin / self.stride))
             assert np.all(nzhw == nzhw2)
             imgs = (imgs.astype(np.float32) - 128) / 128
-            return imgs, bboxes, coord2, np.array(nzhw)
+            return imgs, bboxes, coord2, np.array(nzhw), self.filenames[idx]
 
     def __len__(self):
         if self.phase == 'train':

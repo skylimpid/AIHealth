@@ -6,7 +6,7 @@ from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
 import os
 import time
-
+import numpy as np
 
 class DetectorTrainer(object):
 
@@ -85,9 +85,9 @@ class DetectorTrainer(object):
         self.coord = tf.placeholder(tf.float32, shape=[None, 3, 32, 32, 32])
         self.labels = tf.placeholder(tf.float32, shape=[None, 32, 32, 32, 3, 5])
 
-        self.net_config, detector_net_object, loss_object, pbb = get_model()
+        self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 
-        feat, out = detector_net_object.getDetectorNet(self.X, self.coord)
+        feat, out = self.detector_net_object.getDetectorNet(self.X, self.coord)
 
         [self.loss_1, self.loss_2] \
             = loss_object.getLoss(out, self.labels, train=True)
@@ -112,28 +112,73 @@ class DetectorTrainer(object):
 
     def predict(self, sess):
 
+        save_dir = os.path.join(self.cfg.DIR.bbox_path)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         # load the previous trained detector_net model
         saver = tf.train.Saver()
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 
         # get input data
         margin = 32
-        sidelen = 64
-        split_combine = SplitComb(side_len=sidelen, max_stride=self.net_config['max_stride'],
+        side_len = 64
+        split_combine = SplitComb(side_len=side_len, max_stride=self.net_config['max_stride'],
                                   stride=self.net_config['stride'], margin=margin,
                                   pad_value=self.net_config['pad_value'])
         input_data = TrainingDetectorData(data_dir=self.cfg.DIR.preprocess_result_path,
                                           split_path=self.cfg.DIR.detector_net_train_data_path,
                                           config=self.net_config, split_comber=split_combine,
                                           phase='test')
-        imgs, bboxes, coord2, nzhw = input_data.__getitem__(0)
 
-        #print(imgs.shape)
-        #print(bboxes.shape)
-        #print(coord2.shape)
-        #print(nzhw.shape)
-        #print(nzhw)
+        feat, out = self.detector_net_object.getDetectorNet(self.X, self.coord)
 
+        sess.run(tf.global_variables_initializer())
+        start = time.time()
+        for id in range(input_data.__len__()):
+            imgs, bboxes, coord2, nzhw, filename = input_data.__getitem__(id)
+
+            filename = filename.split('/')[-1].split('_')[0]
+            print("Start to predict user:{}".format(filename))
+
+            total_size_per_img = imgs.shape[0]
+
+            index = 0
+            final_out = None
+
+            start_time = time.time()
+
+            while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
+                feat_predict, out_predict = sess.run([feat, out], feed_dict={
+                    self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
+                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
+                if final_out is None:
+                    final_out = out_predict
+                else:
+                    final_out = tf.concat([final_out, out_predict], axis=0)
+
+                index = index + self.cfg.TRAIN.BATCH_SIZE
+
+            if index < total_size_per_img:
+                feat_predict, out_predict = sess.run([feat, out], feed_dict={
+                    self.X: imgs[index:], self.coord: coord2[index:]})
+                if final_out is None:
+                    final_out = out_predict
+                else:
+                    final_out = tf.concat([final_out, out_predict], axis=0)
+
+            end_time = time.time()
+            print("Predict user:{} spend: {}".format(filename, end_time - start_time))
+            print("start to post-process the predict result for user:{}".format(filename))
+            start_time = time.time()
+            output = split_combine.combine(final_out, nzhw=nzhw)
+            thresh = -3
+            pbb, mask = self.pbb(output, thresh, ismask=True)
+            np.save(os.path.join(save_dir, filename+'_pbb.npy'), pbb)
+            np.save(os.path.join(save_dir, filename+'_lbb.npy'), bboxes)
+            end_time = time.time()
+            print("finish the post-process for user:{} spend:{}".format(filename, end_time - start_time))
+        end = time.time()
+        print("total process time:{}".format(end - start))
 
 if __name__ == "__main__":
 
@@ -142,5 +187,5 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         sess.run(init)
-        #instance.train(sess)
+        # instance.train(sess)
         instance.predict(sess)

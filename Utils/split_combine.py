@@ -1,7 +1,8 @@
 import numpy as np
 
+
 class SplitComb():
-    def __init__(self,side_len,max_stride,stride,margin,pad_value):
+    def __init__(self, side_len, max_stride, stride, margin, pad_value):
         self.side_len = side_len
         self.max_stride = max_stride
         self.stride = stride
@@ -10,11 +11,13 @@ class SplitComb():
         
     def split(self, data, side_len = None, max_stride = None, margin = None):
 
-        if side_len==None:
+        if side_len is None:
             side_len = self.side_len
-        if max_stride == None:
+
+        if max_stride is None:
             max_stride = self.max_stride
-        if margin == None:
+
+        if margin is None:
             margin = self.margin
 
         assert(side_len > margin)
@@ -28,14 +31,12 @@ class SplitComb():
         nh = int(np.ceil(float(h) / side_len))
         nw = int(np.ceil(float(w) / side_len))
 
-        nzhw = [nz,nh,nw]
-
-        self.nzhw = nzhw
+        self.nzhw = [nz, nh, nw]
         
-        pad = [ [0, 0],
-                [margin, nz * side_len - z + margin],
-                [margin, nh * side_len - h + margin],
-                [margin, nw * side_len - w + margin]]
+        pad = [[0, 0],
+               [margin, nz * side_len - z + margin],
+               [margin, nh * side_len - h + margin],
+               [margin, nw * side_len - w + margin]]
 
         data = np.pad(data, pad, 'edge')
 
@@ -54,30 +55,35 @@ class SplitComb():
 
         splits = np.concatenate(splits, 0)
 
-        return splits,nzhw
+        return splits, self.nzhw
 
-    def combine(self, output, nzhw = None, side_len=None, stride=None, margin=None):
+    def combine(self, output, nzhw=None, side_len=None, stride=None, margin=None):
         
-        if side_len==None:
+        if side_len is None:
             side_len = self.side_len
-        if stride == None:
+
+        if stride is None:
             stride = self.stride
-        if margin == None:
+
+        if margin is None:
             margin = self.margin
+
         if nzhw is None:
             nz = self.nz
             nh = self.nh
             nw = self.nw
         else:
-            nz,nh,nw = nzhw
+            nz, nh, nw = nzhw
+
         assert(side_len % stride == 0)
         assert(margin % stride == 0)
-        side_len /= stride
-        margin /= stride
+        side_len = int(side_len/stride)
+        margin = int(margin/stride)
 
         splits = []
-        for i in range(len(output)):
+        for i in range(output.get_shape().as_list()[0]):
             splits.append(output[i])
+
         output = -1000000 * np.ones((
             nz * side_len,
             nh * side_len,
@@ -95,9 +101,9 @@ class SplitComb():
                     eh = (ih + 1) * side_len
                     sw = iw * side_len
                     ew = (iw + 1) * side_len
-                    print ("idx:" + str(idx))
+                   # print("idx:" + str(idx))
                     split = splits[idx][margin:margin + side_len, margin:margin + side_len, margin:margin + side_len]
-                    output[sz:ez, sh:eh, sw:ew] = split
+                    output[sz:ez, sh:eh, sw:ew, :, :] = split.eval()
                     idx += 1
 
         return output 

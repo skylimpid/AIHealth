@@ -58,36 +58,37 @@ class ClassiferNet(object):
         coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
         noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
-        nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))
+        with tf.variable_scope('global/classifier_scope'):
+            nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))
 
-        featshape = noduleFeat.get_shape().as_list()
-        # print(featshape)
+            featshape = noduleFeat.get_shape().as_list()
+            # print(featshape)
 
-        centerFeat = noduleFeat[:,:,
-                     int(featshape[2] / 2 - 1):int(featshape[2] / 2 + 1),
-                     int(featshape[3] / 2 - 1):int(featshape[3] / 2 + 1),
-                     int(featshape[4] / 2 - 1):int(featshape[4] / 2 + 1)]
-        # print(centerFeat.shape)
-        centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="valid",
-                                             data_format=self.DATA_FORMAT)
-        # print(centerFeat.shape)
+            centerFeat = noduleFeat[:, :,
+                         int(featshape[2] / 2 - 1):int(featshape[2] / 2 + 1),
+                         int(featshape[3] / 2 - 1):int(featshape[3] / 2 + 1),
+                         int(featshape[4] / 2 - 1):int(featshape[4] / 2 + 1)]
+            # print(centerFeat.shape)
+            centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="valid",
+                                                 data_format=self.DATA_FORMAT)
+            # print(centerFeat.shape)
 
-        centerFeat = centerFeat[:, :, 0, 0, 0]
-        # print(centerFeat.shape)
-        out = tf.layers.dropout(centerFeat, rate=0.5)
-        # print(out.shape)
-        dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu)
-        # print(dense1.shape)
-        dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid)
-        out = tf.reshape(dense2, (-1, xsize[1]))
-        # print(out.shape)
-        baseline = tf.constant(value=-30.0, dtype=tf.float32)
-        base_prob = tf.nn.sigmoid(baseline)
-        # print(base_prob.shape)
-        # print(base_prob)
-        casePred = 1-tf.reduce_prod(1-out, axis=1)*(1-base_prob)
-        # print(casePred.shape)
-        return nodulePred, casePred, out
+            centerFeat = centerFeat[:, :, 0, 0, 0]
+            # print(centerFeat.shape)
+            out = tf.layers.dropout(centerFeat, rate=0.5)
+            # print(out.shape)
+            dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu)
+            # print(dense1.shape)
+            dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid)
+            out = tf.reshape(dense2, (-1, xsize[1]))
+            # print(out.shape)
+            baseline = tf.constant(value=-30.0, dtype=tf.float32)
+            base_prob = tf.nn.sigmoid(baseline)
+            # print(base_prob.shape)
+            # print(base_prob)
+            casePred = 1-tf.reduce_prod(1-out, axis=1)*(1-base_prob)
+            # print(casePred.shape)
+            return nodulePred, casePred, out
 
 
 def get_model(trained_detectorNet):

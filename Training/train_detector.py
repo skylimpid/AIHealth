@@ -32,8 +32,8 @@ class DetectorTrainer(object):
         return False
 
     def train(self, sess):
-
-        saver = tf.train.Saver(max_to_keep=10)
+        value_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
+        saver = tf.train.Saver(value_list, max_to_keep=10)
 
         if not os.path.exists(cfg.DIR.detector_net_saver_dir):
             os.makedirs(cfg.DIR.detector_net_saver_dir)
@@ -88,10 +88,10 @@ class DetectorTrainer(object):
 
         self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 
-        feat, out = self.detector_net_object.getDetectorNet(self.X, self.coord)
+        self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord)
 
         [self.loss_1, self.loss_2] \
-            = loss_object.getLoss(out, self.labels, train=True)
+            = loss_object.getLoss(self.out, self.labels, train=True)
 
         global_step = tf.Variable(0, trainable=False)
 
@@ -117,7 +117,9 @@ class DetectorTrainer(object):
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         # load the previous trained detector_net model
-        saver = tf.train.Saver()
+        value_list = []
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        saver = tf.train.Saver(value_list, max_to_keep=100)
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 
         # get input data
@@ -130,8 +132,6 @@ class DetectorTrainer(object):
                                           split_path=self.cfg.DIR.detector_net_train_data_path,
                                           config=self.net_config, split_comber=split_combine,
                                           phase='test')
-
-        feat, out = self.detector_net_object.getDetectorNet(self.X, self.coord)
 
         sess.run(tf.global_variables_initializer())
         start = time.time()
@@ -149,7 +149,7 @@ class DetectorTrainer(object):
             start_time = time.time()
 
             while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
-                feat_predict, out_predict = sess.run([feat, out], feed_dict={
+                feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
                     self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
                     self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
                 if final_out is None:
@@ -160,7 +160,7 @@ class DetectorTrainer(object):
                 index = index + self.cfg.TRAIN.BATCH_SIZE
 
             if index < total_size_per_img:
-                feat_predict, out_predict = sess.run([feat, out], feed_dict={
+                feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
                     self.X: imgs[index:], self.coord: coord2[index:]})
                 if final_out is None:
                     final_out = out_predict
@@ -181,6 +181,7 @@ class DetectorTrainer(object):
         end = time.time()
         print("total process time:{}".format(end - start))
 
+
 if __name__ == "__main__":
 
     instance = DetectorTrainer(cfg)
@@ -188,5 +189,5 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         sess.run(init)
-        # instance.train(sess)
+        #instance.train(sess)
         instance.predict(sess)

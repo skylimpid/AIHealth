@@ -4,9 +4,12 @@ from Training.Classifier.TrainingClassifierData import TrainingClassifierData
 from Net.tensorflow_model.ClassiferNet import get_model
 from Net.Classifer_Net_Loss import ClassiferNetLoss
 from Training.configuration_training import cfg
+from Net.tensorflow_model.DetectorNet import DecetorNet
+import os
+import time
 
 
-class ClassiferTrainer(object):
+class ClassifierTrainer(object):
 
     """
     Initializer
@@ -17,20 +20,24 @@ class ClassiferTrainer(object):
         self.detectorNet = detectorNet
         self.build_model()
 
-
-
     def train(self, sess):
+        value_list = []
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/classifier_scope'))
+        saver = tf.train.Saver(value_list, max_to_keep=100)
 
-        saver = tf.train.Saver()
-        saver.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/classifier_scope')
+        sess.run(tf.variables_initializer(var_classifier))
 
+
+        sess.run(tf.global_variables_initializer())
         dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
                                          cfg.DIR.bbox_path,
                                          cfg.DIR.kaggle_full_labels,
                                          cfg.DIR.classifier_net_train_data_path,
                                          self.net_config,
                                          phase='train')
-
+        start_time = time.time()
         for epoch in range(0, self.cfg.TRAIN.EPOCHS):
 
             batch_count = 1
@@ -50,6 +57,17 @@ class ClassiferTrainer(object):
 
             print("Epoch %d finished." % epoch)
             dataset.reset()
+            if epoch != 0 and epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
+                filename = self.cfg.DIR.classifier_net_saver_file_prefix + '{:d}'.format(epoch+1)
+                filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, filename)
+                saver.save(sess, filename, global_step=(epoch+1))
+
+        filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, (self.cfg.DIR.classifier_net_saver_file_prefix
+                                                                        + 'final'))
+        saver.save(sess, filename)
+        end_time = time.time()
+
+        print("The total time used in training: {}".format(end_time-start_time))
 
     def build_model(self):
 
@@ -65,9 +83,16 @@ class ClassiferTrainer(object):
         nodulePred, casePred, casePred_each = classifer_net_object.getClassiferNet(self.X, self.coord)
 
         loss_object = ClassiferNetLoss(self.net_config)
+
         self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
 
-        self.loss_1_optimizer = tf.train.AdamOptimizer(learning_rate=self.cfg.TRAIN.LEARNING_RATE).minimize(self.loss)
+        global_step = tf.Variable(0, trainable=False)
+
+        lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
+                                        self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.1, staircase=True)
+
+        self.loss_1_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+            self.loss, global_step=global_step)
 
 
     def test(self):
@@ -81,11 +106,32 @@ class ClassiferTrainer(object):
 if __name__ == "__main__":
 
 
+    def get_variables_in_checkpoint_file(file_name):
+        try:
+            from tensorflow.python import pywrap_tensorflow
+            reader = pywrap_tensorflow.NewCheckpointReader(file_name)
+            var_to_shape_map = reader.get_variable_to_shape_map()
+            return var_to_shape_map
+        except Exception as e:
+            print(str(e))
+
+    def get_variables_to_restore(variables, var_keep_dic):
+        variables_to_restore = []
+        for v in variables:
+            if v.name.split(':')[0] in var_keep_dic:
+                print('Variables restored: %s' % v.name)
+                variables_to_restore.append(v)
+        return variables_to_restore
+
     init = tf.global_variables_initializer()
 
     with tf.Session() as sess:
-        detectorNet = None
-        instance = ClassiferTrainer(cfg, detectorNet)
+        detectorNet = DecetorNet()
+        instance = ClassifierTrainer(cfg, detectorNet)
+        variables = tf.global_variables()
         sess.run(init)
-        #instance.train(sess)
+        var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
+        restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        instance.train(sess)
 

@@ -8,6 +8,7 @@ import os
 import time
 import numpy as np
 
+
 class DetectorTrainer(object):
 
 

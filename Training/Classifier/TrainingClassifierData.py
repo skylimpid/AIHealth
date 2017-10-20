@@ -5,7 +5,7 @@ import numpy as np
 
 from Utils.DataSet import DataSet
 from Utils.utils import nms, iou
-from Utils.DataSetUtils import simpleCrop, sample, augment
+from Utils.DataSetUtils import simpleCrop, sample, ClassifierDataAugment
 
 
 
@@ -28,22 +28,25 @@ class TrainingClassifierData(DataSet):
         self.candidate_box = []
         self.pbb_label = []
 
-        idcs = split
+        idcs = np.load(split)
+
+        # print(idcs)
         self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in idcs]
+        # print(self.filenames)
         if phase != 'test':
             labels = np.array(pandas.read_csv(labelfile))
-            self.yset = np.array([labels[labels[:, 0] == f.split('-')[0].split('_')[0], 1] for f in split]).astype(
+            self.yset = np.array([labels[labels[:, 0] == f.split('-')[0].split('_')[0], 1] for f in idcs]).astype(
                 'int')
         idcs = [f.split('-')[0] for f in idcs]
+        # print (idcs)
 
         for idx in idcs:
+            print(idx)
             pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
             pbb = pbb[pbb[:, 0] > config['conf_th']]
-            pbb = nms(pbb, config['nms_th'])
-
+            pbb = nms(pbb, config['nms_th'], self.topk*10)
             lbb = np.load(os.path.join(bboxpath, idx + '_lbb.npy'))
             pbb_label = []
-
             for p in pbb:
                 isnod = False
                 for l in lbb:
@@ -75,8 +78,8 @@ class TrainingClassifierData(DataSet):
         else:
             chosenid = conf_list.argsort()[::-1][:topk]
         croplist = np.zeros([topk, 1, self.crop_size[0], self.crop_size[1], self.crop_size[2]]).astype('float32')
-        coordlist = np.zeros([topk, 3, self.crop_size[0] / self.stride, self.crop_size[1] / self.stride,
-                              self.crop_size[2] / self.stride]).astype('float32')
+        coordlist = np.zeros([topk, 3, int(self.crop_size[0] / self.stride), int(self.crop_size[1] / self.stride),
+                              int(self.crop_size[2] / self.stride)]).astype('float32')
         padmask = np.concatenate([np.ones(len(chosenid)), np.zeros(self.topk - len(chosenid))])
         isnodlist = np.zeros([topk])
 
@@ -85,7 +88,7 @@ class TrainingClassifierData(DataSet):
             isnod = pbb_label[id]
             crop, coord = self.crop(img, target)
             if self.phase == 'train':
-                crop, coord = augment(crop, coord,
+                crop, coord = ClassifierDataAugment(crop, coord,
                                       ifflip=self.augtype['flip'], ifrotate=self.augtype['rotate'],
                                       ifswap=self.augtype['swap'])
             crop = crop.astype(np.float32)
@@ -113,6 +116,8 @@ class TrainingClassifierData(DataSet):
 
         if self.phase != 'test':
             for i in range(batch_size):
+                if self.index >= self.length:
+                    break
                 croplist, coordlist, isnodlist, y = self.__getitem__(self.index)
 
                 if final_cropList is None:
@@ -131,14 +136,18 @@ class TrainingClassifierData(DataSet):
                     final_isnodlist = np.append(final_isnodlist, np.expand_dims(isnodlist, axis=0), axis=0)
 
                 if final_y is None:
-                    final_y = np.expand_dims(y, axis=0)
+                    #final_y = np.expand_dims(y, axis=0)
+                    final_y = y
                 else:
-                    final_y = np.append(final_y, np.expand_dims(y, axis=0), axis=0)
+                    #final_y = np.append(final_y, np.expand_dims(y, axis=0), axis=0)
+                    final_y = np.append(final_y, y, axis=0)
 
                 self.index = self.index + 1
             return final_cropList, final_coordlist, final_isnodlist, final_y
         else:
             for i in range(batch_size):
+                if self.index >= self.length:
+                    break
                 croplist, coordlist, isnodlist = self.__getitem__(self.index)
 
                 if final_cropList is None:
@@ -159,9 +168,8 @@ class TrainingClassifierData(DataSet):
                 self.index = self.index + 1
             return final_cropList, final_coordlist, final_isnodlist
 
-
     def hasNextBatch(self):
-        return self.index <= self.length
+        return self.index < self.length
 
     def reset(self):
         self.index = 0

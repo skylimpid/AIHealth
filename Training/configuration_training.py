@@ -47,6 +47,8 @@ __C.DIR.detector_net_saver_file_prefix = "detector_model_weights_iter_"
 
 __C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
 
+__C.DIR.classifier_net_train_data_path = DATA_BASE_DIR + "full1.npy"
+
 # HyperParameters for Training.
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.01

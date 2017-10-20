@@ -154,7 +154,7 @@ class TrainingDetectorData(DataSet):
 
 
     def hasNextBatch(self):
-        return self.index <= self.length
+        return self.index < self.length
 
     def reset(self):
         self.index = 0

@@ -354,7 +354,7 @@ class simpleCrop():
 
 def sample(conf, N, T=1):
     if len(conf) > N:
-        target = range(len(conf))
+        target = list(range(len(conf)))
         chosen_list = []
         for i in range(N):
             chosenidx = sampleone(target, conf, T)
@@ -380,7 +380,7 @@ def softmax(x):
     return np.exp(x - maxx) / np.sum(np.exp(x - maxx))
 
 
-def classifierDataAugment(sample, coord, ifflip=True, ifrotate=True, ifswap=True, filling_value=0):
+def ClassifierDataAugment(sample, coord, ifflip=True, ifrotate=True, ifswap=True, filling_value=0):
     #                     angle1 = np.random.rand()*180
     if ifrotate:
         validrot = False

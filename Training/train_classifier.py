@@ -21,6 +21,10 @@ class ClassifierTrainer(object):
         self.build_model()
 
     def train(self, sess):
+        merged = tf.summary.merge_all()
+        writer = tf.summary.FileWriter('/home/xuan/tensorboard/1')
+        writer.add_graph(sess.graph)
+
         value_list = []
         value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
         value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/classifier_scope'))
@@ -38,6 +42,7 @@ class ClassifierTrainer(object):
                                          self.net_config,
                                          phase='train')
         start_time = time.time()
+        index = 1
         for epoch in range(0, self.cfg.TRAIN.EPOCHS):
 
             batch_count = 1
@@ -46,15 +51,16 @@ class ClassifierTrainer(object):
 
                 batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
-                sess.run([self.loss_1_optimizer],
+                merged_output,_, loss, accuracy_op = sess.run([merged,self.loss_1_optimizer, self.loss, self.accuracy],
                          feed_dict={self.X: batch_data, self.coord: batch_coord,
                                     self.labels: batch_labels, self.isnod: batch_isnode})
-
+                writer.add_summary(merged_output, index)
                 if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
                     print("Current batch is %d" % batch_count)
 
                 batch_count += 1
-
+                index += 1
+                print("The loss is:{}".format(loss))
             print("Epoch %d finished." % epoch)
             dataset.reset()
             if epoch != 0 and epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
@@ -84,8 +90,9 @@ class ClassifierTrainer(object):
 
         loss_object = ClassiferNetLoss(self.net_config)
 
-        self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
-
+        with tf.name_scope('loss'):
+            self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
+        tf.summary.scalar('loss', self.loss)
         global_step = tf.Variable(0, trainable=False)
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
@@ -93,6 +100,10 @@ class ClassifierTrainer(object):
 
         self.loss_1_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
             self.loss, global_step=global_step)
+
+        correct_predict = tf.equal(self.labels[:,0], tf.cast(casePred >= 0.5, tf.float32))
+        self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))
+        tf.summary.scalar("accuracy", self.accuracy)
 
 
     def test(self):

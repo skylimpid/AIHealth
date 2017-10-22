@@ -50,7 +50,7 @@ __C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
 __C.DIR.classifier_net_saver_dir = SYS_DIR + "/Trained_Models/ClassifierNetWeight"
 __C.DIR.classifier_net_saver_file_prefix = "classifier_model_weights_iter_"
 
-__C.DIR.classifier_net_train_data_path = DATA_BASE_DIR + "full1.npy"
+__C.DIR.classifier_net_train_data_path = DATA_BASE_DIR + "full.npy"
 
 # HyperParameters for Training.
 __C.TRAIN = edict()
@@ -58,7 +58,7 @@ __C.TRAIN.LEARNING_RATE = 0.01
 __C.TRAIN.LEARNING_RATE_STEP_SIZE = 100
 __C.TRAIN.MOMENTUM = 0.9
 __C.TRAIN.DISPLAY_STEPS = 2
-__C.TRAIN.BATCH_SIZE = 2
+__C.TRAIN.BATCH_SIZE = 1
 __C.TRAIN.EPOCHS = 10
 __C.TRAIN.SAVE_STEPS = 100
 

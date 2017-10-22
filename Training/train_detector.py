@@ -189,5 +189,5 @@ if __name__ == "__main__":
 
     with tf.Session() as sess:
         sess.run(init)
-        #instance.train(sess)
-        instance.predict(sess)
+        instance.train(sess)
+        #instance.predict(sess)

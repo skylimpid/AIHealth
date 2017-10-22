@@ -12,7 +12,8 @@ from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
 from skimage.morphology import convex_hull_image
 from multiprocessing import Pool
 from functools import partial
-
+import random
+from Training.constants import KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_VALIDATE_DATA, LUNA_TRAIN_DATA
 
 sys.path.append('../Preprocessing')
 
@@ -148,13 +149,26 @@ def savenpy(id, annos, filelist, data_path, prep_folder):
 
 def full_prep(cfg, step1=True, step2=True):
     warnings.filterwarnings("ignore")
-
     # preprocess_result_path = './prep_result'
     prep_folder = cfg.DIR.preprocess_result_path
     data_path = cfg.DIR.kaggle_data_path
     finished_flag = '.flag_prepkaggle'
 
     if not os.path.exists(finished_flag):
+
+        print("Split the train/validate data for kaggle dataset")
+        kaggle_full_filelist = [f for f in os.listdir(cfg.DIR.kaggle_data_path)]
+        validate_size = int(len(kaggle_full_filelist) * cfg.TRAIN.DATA_SPLIT_RATIO)
+        validate_kaggle_filelist = random.sample(kaggle_full_filelist, validate_size)
+        train_kaggle_filelist = np.setdiff1d(kaggle_full_filelist, validate_kaggle_filelist)
+        if os.path.exists(cfg.DIR.train_split_data_path + KAGGLE_TRAIN_DATA):
+            os.remove(cfg.DIR.train_split_data_path + KAGGLE_TRAIN_DATA)
+        np.save(cfg.DIR.train_split_data_path + KAGGLE_TRAIN_DATA, train_kaggle_filelist)
+
+        if os.path.exists(cfg.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA):
+            os.remove(cfg.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA)
+        np.save(cfg.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA, validate_kaggle_filelist)
+
         alllabelfiles = cfg.DIR.kaggle_annos_path
         tmp = []
         for f in alllabelfiles:
@@ -297,7 +311,7 @@ def prepare_luna(cfg):
     finished_flag = '.flag_prepareluna'
 
     if not os.path.exists(finished_flag):
-
+        luna_names=[]
         subsetdirs = [os.path.join(luna_raw, f) for f in os.listdir(luna_raw) if
                       f.startswith('subset') and os.path.isdir(os.path.join(luna_raw, f))]
         if not os.path.exists(luna_data):
@@ -336,8 +350,9 @@ def prepare_luna(cfg):
                     print("Skip this {}".format(name))
                     continue
                 filename = '0' * (3 - len(str(id))) + str(id)
+                luna_names.append(filename)
                 shutil.copyfile(os.path.join(d, f), os.path.join(luna_data, filename + f[-4:]))
-                print(os.path.join(luna_data, str(id) + f[-4:]))
+                # print(os.path.join(luna_data, str(id) + f[-4:]))
 
         files = [f for f in os.listdir(luna_data) if f.endswith('mhd')]
         for file in files:
@@ -346,7 +361,7 @@ def prepare_luna(cfg):
                 id = file.split('.mhd')[0]
                 filename = '0' * (3 - len(str(id))) + str(id)
                 content[-1] = 'ElementDataFile = ' + filename + '.raw\n'
-                print(content[-1])
+                # print(content[-1])
             with open(os.path.join(luna_data, file), 'w') as f:
                 f.writelines(content)
 
@@ -364,7 +379,7 @@ def prepare_luna(cfg):
                 filename = '0' * (3 - len(str(id))) + str(id)
 
                 shutil.copyfile(os.path.join(luna_segment, f), os.path.join(luna_segment_data, filename + lastfix))
-                print(os.path.join(luna_segment_data, filename + lastfix))
+                # print(os.path.join(luna_segment_data, filename + lastfix))
 
         files = [f for f in os.listdir(luna_segment_data) if f.endswith('mhd')]
         for file in files:
@@ -373,9 +388,20 @@ def prepare_luna(cfg):
                 id = file.split('.mhd')[0]
                 filename = '0' * (3 - len(str(id))) + str(id)
                 content[-1] = 'ElementDataFile = ' + filename + '.zraw\n'
-                print(content[-1])
+                # print(content[-1])
             with open(os.path.join(luna_segment_data, file), 'w') as f:
                 f.writelines(content)
+
+        print("Split the train/validate data for luna dataset ")
+        validate_size = int(len(luna_names) * cfg.TRAIN.DATA_SPLIT_RATIO)
+        validate_luna_filelist = random.sample(luna_names, validate_size)
+        train_luna_filelist = np.setdiff1d(luna_names, validate_luna_filelist)
+        if os.path.exists(cfg.DIR.train_split_data_path + LUNA_TRAIN_DATA):
+            os.remove(cfg.DIR.train_split_data_path + LUNA_TRAIN_DATA)
+        np.save(cfg.DIR.train_split_data_path + LUNA_TRAIN_DATA, train_luna_filelist)
+        if os.path.exists(cfg.DIR.train_split_data_path + LUNA_VALIDATE_DATA):
+            os.remove(cfg.DIR.train_split_data_path + LUNA_VALIDATE_DATA)
+        np.save(cfg.DIR.train_split_data_path + LUNA_VALIDATE_DATA, validate_luna_filelist)
 
     print('end changing luna name')
     f = open(finished_flag, "w+")

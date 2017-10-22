@@ -70,16 +70,17 @@ class ClassiferNet(object):
                          int(featshape[4] / 2 - 1):int(featshape[4] / 2 + 1)]
             # print(centerFeat.shape)
             centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="valid",
-                                                 data_format=self.DATA_FORMAT)
+                                                 data_format=self.DATA_FORMAT,
+                                                 name="center_feature_from_nodule_feature")
             # print(centerFeat.shape)
 
             centerFeat = centerFeat[:, :, 0, 0, 0]
             # print(centerFeat.shape)
-            out = tf.layers.dropout(centerFeat, rate=0.5)
+            out = tf.layers.dropout(centerFeat, rate=0.5, name="drop_out_after_center_feature")
             # print(out.shape)
-            dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu)
+            dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu, name="dense_layer_1")
             # print(dense1.shape)
-            dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid)
+            dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_layer_2")
             out = tf.reshape(dense2, (-1, xsize[1]))
             # print(out.shape)
             baseline = tf.constant(value=-30.0, dtype=tf.float32)

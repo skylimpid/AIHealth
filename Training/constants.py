@@ -13,3 +13,11 @@ SYS_DIR = "/home/xuan/AIHealth"
 # sample images folder
 DATA_SAMPLE_DIR = "/home/xuan/lung_cancer_data/sample_images"
 
+KAGGLE_TRAIN_DATA = "kaggle_train_data.npy"
+
+KAGGLE_VALIDATE_DATA = "kaggle_validate_data.npy"
+
+LUNA_TRAIN_DATA = "luna_train_data.npy"
+LUNA_VALIDATE_DATA = "luna_validate_data.npy"
+
+

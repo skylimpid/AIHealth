@@ -1,5 +1,5 @@
 from easydict import EasyDict as edict
-from Training.constants import DATA_BASE_DIR, SYS_DIR
+from Training.constants import DATA_BASE_DIR, SYS_DIR, KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_TRAIN_DATA, LUNA_VALIDATE_DATA
 
 __C = edict()
 cfg = __C
@@ -45,12 +45,21 @@ __C.DIR.preprocessing_backend = 'python'
 __C.DIR.detector_net_saver_dir = SYS_DIR + "/Trained_Models/DetectorNetWeight"
 __C.DIR.detector_net_saver_file_prefix = "detector_model_weights_iter_"
 
+# Define the directory which contains the train/split data
+__C.DIR.train_split_data_path = DATA_BASE_DIR + "train_split/"
+
+# Define the files which contains the train/split ids for detector net
 __C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
+#__C.DIR.detector_net_train_data_path = __C.DIR.train_split_data_path + LUNA_TRAIN_DATA
+__C.DIR.detector_net_validate_data_path = __C.DIR.train_split_data_path + LUNA_VALIDATE_DATA
 
 __C.DIR.classifier_net_saver_dir = SYS_DIR + "/Trained_Models/ClassifierNetWeight"
 __C.DIR.classifier_net_saver_file_prefix = "classifier_model_weights_iter_"
 
+# Define the files which contains the train/split ids for classifier net
 __C.DIR.classifier_net_train_data_path = DATA_BASE_DIR + "full.npy"
+#__C.DIR.classifier_net_train_data_path = __C.DIR.train_split_data_path + KAGGLE_TRAIN_DATA
+__C.DIR.classifier_net_validate_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
 
 # HyperParameters for Training.
 __C.TRAIN = edict()
@@ -61,4 +70,4 @@ __C.TRAIN.DISPLAY_STEPS = 2
 __C.TRAIN.BATCH_SIZE = 1
 __C.TRAIN.EPOCHS = 10
 __C.TRAIN.SAVE_STEPS = 100
-
+__C.TRAIN.DATA_SPLIT_RATIO = 0.2

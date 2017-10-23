@@ -21,6 +21,8 @@ class DetectorTrainer(object):
 
         self.build_model()
 
+
+    # Detect if the provided tensor 'labels' contains +1 labels.
     def has_positive_in_label(self, labels):
 
         labels = tf.reshape(tf.convert_to_tensor(labels), shape=(-1, 5))
@@ -30,6 +32,7 @@ class DetectorTrainer(object):
             return True
 
         return False
+
 
     def train(self, sess):
         value_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
@@ -75,10 +78,16 @@ class DetectorTrainer(object):
 
         filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, (self.cfg.DIR.detector_net_saver_file_prefix
                                                                       + 'final'))
+
+
+        """
+        TO-DO: we need to set up period check point save, and support resuming training from checkpoint
+        """
         saver.save(sess, filename)
         end_time = time.time()
 
         print("The total time used in training: {}".format(end_time-start_time))
+
 
     def build_model(self):
 

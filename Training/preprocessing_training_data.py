@@ -9,7 +9,7 @@ sys.path.append(SYS_DIR)
 
 
 def main():
-    # start prepare the training data
+    # start to prepare the training data
     print("Start to prepare the training data.")
 
     if not os.path.exists(cfg.DIR.train_split_data_path):

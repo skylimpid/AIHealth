@@ -1,12 +1,12 @@
 import tensorflow as tf
+import os
+import time
+import numpy as np
 
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
-import os
-import time
-import numpy as np
 
 
 class DetectorTrainer(object):

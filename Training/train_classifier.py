@@ -1,12 +1,13 @@
 import tensorflow as tf
+import os
+import time
 
 from Training.Classifier.TrainingClassifierData import TrainingClassifierData
 from Net.tensorflow_model.ClassiferNet import get_model
 from Net.Classifer_Net_Loss import ClassiferNetLoss
 from Training.configuration_training import cfg
 from Net.tensorflow_model.DetectorNet import DecetorNet
-import os
-import time
+from Training.constants import TENSORBOARD_LOG_DIR
 
 
 class ClassifierTrainer(object):
@@ -22,7 +23,7 @@ class ClassifierTrainer(object):
 
     def train(self, sess):
         merged = tf.summary.merge_all()
-        writer = tf.summary.FileWriter('/home/xuan/tensorboard/1')
+        writer = tf.summary.FileWriter(TENSORBOARD_LOG_DIR)
         writer.add_graph(sess.graph)
 
         value_list = []

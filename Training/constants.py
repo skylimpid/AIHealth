@@ -10,11 +10,13 @@ DATA_BASE_DIR = "/home/xuan/lung_cancer_data/"
 # system path in preprocessing_training_data
 SYS_DIR = "/home/xuan/AIHealth"
 
+# tensorboard log path
+TENSORBOARD_LOG_DIR = "/home/xuan/tensorboard/1"
+
 # sample images folder
 DATA_SAMPLE_DIR = "/home/xuan/lung_cancer_data/sample_images"
 
 KAGGLE_TRAIN_DATA = "kaggle_train_data.npy"
-
 KAGGLE_VALIDATE_DATA = "kaggle_validate_data.npy"
 
 LUNA_TRAIN_DATA = "luna_train_data.npy"

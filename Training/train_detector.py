@@ -33,6 +33,23 @@ class DetectorTrainer(object):
 
         return False
 
+    def has_negative_in_label(self, labels):
+        labels = tf.reshape(tf.convert_to_tensor(labels), shape=(-1, 5))
+        pos_idcs = labels[:, 0] < -0.5
+
+        if tf.reduce_sum(tf.cast(pos_idcs, dtype=tf.int32)).eval() > 0:
+            return True
+
+        return False
+
+    def need_hard_mining(self, labels, hard_minng):
+        labels = tf.reshape(tf.convert_to_tensor(labels), shape=(-1, 5))
+        pos_idcs = labels[:, 0] < -0.5
+
+        if tf.reduce_sum(tf.cast(pos_idcs, dtype=tf.int32)).eval() > hard_minng:
+            return True
+
+        return False
 
     def train(self, sess):
         value_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
@@ -58,11 +75,27 @@ class DetectorTrainer(object):
                 batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
                 if self.has_positive_in_label(batch_labels):
-                    sess.run([self.loss_1_optimizer],
-                             feed_dict={self.X:batch_data, self.coord:batch_coord, self.labels:batch_labels})
+                    if self.has_negative_in_label(batch_labels):
+                        if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):
+                            sess.run([self.classify_loss_with_pos_neg_with_hard_mining_optimizer],
+                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                        else:
+                            sess.run([self.classify_loss_with_pos_neg_without_hard_mining_optimizer],
+                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                    else:
+                        sess.run([self.classify_loss_without_neg_optimizer],
+                                 feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
                 else:
-                    sess.run([self.loss_2_optimizer],
-                             feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                    if self.has_negative_in_label(batch_labels):
+                        if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):
+                            sess.run([self.classify_loss_without_pos_with_hard_mining],
+                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                        else:
+                            sess.run([self.classify_loss_without_pos_without_hard_mining_optimizer],
+                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                    else:
+                        print("Can not find any label data from the dataset in this batch. Skip it")
+                        continue
 
                 if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
                     print("Current batch is %d" % batch_count)
@@ -99,19 +132,37 @@ class DetectorTrainer(object):
 
         self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord)
 
-        [self.loss_1, self.loss_2] \
-            = loss_object.getLoss(self.out, self.labels, train=True)
+        [self.classify_loss_with_pos_neg_without_hard_mining,
+         self.classify_loss_without_pos_without_hard_mining,
+         self.classify_loss_without_neg,
+         self.classify_loss_with_pos_neg_with_hard_mining,
+         self.classify_loss_without_pos_with_hard_mining] = loss_object.getLoss(self.out, self.labels,
+                                                                                self.cfg.TRAIN.BATCH_SIZE)
 
         global_step = tf.Variable(0, trainable=False)
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
                                         self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.1, staircase=True)
 
-        self.loss_1_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
-            self.loss_1, global_step=global_step)
+        self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
+            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+            self.classify_loss_with_pos_neg_without_hard_mining, global_step=global_step)
 
-        self.loss_2_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
-            self.loss_2, global_step=global_step)
+        self.classify_loss_without_pos_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
+            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+            self.classify_loss_without_pos_without_hard_mining, global_step=global_step)
+
+        self.classify_loss_without_neg_optimizer = tf.train.MomentumOptimizer(
+            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+            self.classify_loss_without_neg, global_step=global_step)
+
+        self.classify_loss_with_pos_neg_with_hard_mining_optimizer = tf.train.MomentumOptimizer(
+            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+            self.classify_loss_with_pos_neg_with_hard_mining, global_step=global_step)
+
+        self.classify_loss_without_pos_with_hard_mining_optimizer = tf.train.MomentumOptimizer(
+            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+            self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
 
     def test(self):
 

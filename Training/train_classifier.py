@@ -7,7 +7,7 @@ from Net.tensorflow_model.ClassiferNet import get_model
 from Net.Classifer_Net_Loss import ClassiferNetLoss
 from Training.configuration_training import cfg
 from Net.tensorflow_model.DetectorNet import DecetorNet
-from Training.constants import TENSORBOARD_LOG_DIR
+from Training.constants import CLASSIFIER_NET_TENSORBOARD_LOG_DIR
 
 
 class ClassifierTrainer(object):
@@ -23,7 +23,7 @@ class ClassifierTrainer(object):
 
     def train(self, sess):
         merged = tf.summary.merge_all()
-        writer = tf.summary.FileWriter(TENSORBOARD_LOG_DIR)
+        writer = tf.summary.FileWriter(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
         writer.add_graph(sess.graph)
 
         value_list = []
@@ -53,8 +53,9 @@ class ClassifierTrainer(object):
                 batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
                 merged_output,_, loss, accuracy_op = sess.run([merged,self.loss_1_optimizer, self.loss, self.accuracy],
-                         feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                    self.labels: batch_labels, self.isnod: batch_isnode})
+                                                              feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                                         self.labels: batch_labels,
+                                                                         self.isnod: batch_isnode})
                 writer.add_summary(merged_output, index)
                 if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
                     print("Current batch is %d" % batch_count)

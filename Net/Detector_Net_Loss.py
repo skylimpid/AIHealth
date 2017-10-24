@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 class DetectorNetLoss():
     def __init__(self, num_hard=0):
         self.num_hard = num_hard
@@ -38,13 +39,13 @@ class DetectorNetLoss():
             tf.losses.huber_loss(pw, lw),
             tf.losses.huber_loss(pd, ld)]
         classify_loss_with_pos_neg_without_hard_mining = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=pos_prob, labels=pos_labels[:, 0])) + tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=pos_prob, labels=pos_labels[:, 0])) + tf.reduce_mean(
+            0.5 * tf.nn.sigmoid_cross_entropy_with_logits(logits=neg_prob, labels=(neg_labels + 1)))
+
+        classify_loss_without_pos_without_hard_mining = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=neg_prob, labels=(neg_labels + 1)))
 
-        classify_loss_without_pos_without_hard_mining = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=neg_prob, labels=(neg_labels + 1)))
-
-        classify_loss_without_neg = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        classify_loss_without_neg = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=pos_prob, labels=pos_labels[:, 0]))
 
         # create loss based on the hard_mining
@@ -54,11 +55,10 @@ class DetectorNetLoss():
         neg_labels = tf.gather(neg_labels, idcs)
 
         classify_loss_with_pos_neg_with_hard_mining = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=pos_prob, labels=pos_labels[:, 0])) + tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
+                logits=pos_prob, labels=pos_labels[:, 0])) + tf.reduce_mean(
+            0.5 * tf.nn.sigmoid_cross_entropy_with_logits(logits=neg_prob, labels=(neg_labels + 1)))
+        classify_loss_without_pos_with_hard_mining = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(
                 logits=neg_prob, labels=(neg_labels + 1)))
-        classify_loss_without_pos_with_hard_mining = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-                logits=neg_prob, labels=(neg_labels + 1)))
-
 
         for regress_loss in regress_losses:
             classify_loss_with_pos_neg_without_hard_mining += regress_loss
@@ -68,6 +68,7 @@ class DetectorNetLoss():
         return classify_loss_with_pos_neg_without_hard_mining, classify_loss_without_pos_without_hard_mining,\
                classify_loss_without_neg, classify_loss_with_pos_neg_with_hard_mining,\
                classify_loss_without_pos_with_hard_mining
+
 
 if __name__ == "__main__":
 

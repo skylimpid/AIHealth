@@ -11,7 +11,8 @@ DATA_BASE_DIR = "/home/xuan/lung_cancer_data/"
 SYS_DIR = "/home/xuan/AIHealth"
 
 # tensorboard log path
-TENSORBOARD_LOG_DIR = "/home/xuan/tensorboard/1"
+DETECTOR_NET_TENSORBOARD_LOG_DIR = "/home/xuan/tensorboard/detector_net"
+CLASSIFIER_NET_TENSORBOARD_LOG_DIR = "/home/xuan/tensorboard/classifier_net"
 
 # sample images folder
 DATA_SAMPLE_DIR = "/home/xuan/lung_cancer_data/sample_images"

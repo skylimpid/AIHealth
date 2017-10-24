@@ -7,6 +7,7 @@ from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
+from Training.constants import DETECTOR_NET_TENSORBOARD_LOG_DIR
 
 
 class DetectorTrainer(object):
@@ -52,6 +53,11 @@ class DetectorTrainer(object):
         return False
 
     def train(self, sess):
+        average_loss_holder = tf.placeholder(tf.float32)
+        average_loss_tensor = tf.summary.scalar("average_loss", average_loss_holder)
+        writer = tf.summary.FileWriter(DETECTOR_NET_TENSORBOARD_LOG_DIR)
+        writer.add_graph(sess.graph)
+
         value_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
         saver = tf.train.Saver(value_list, max_to_keep=10)
 
@@ -65,42 +71,63 @@ class DetectorTrainer(object):
                                         phase='train')
 
         start_time = time.time()
-
+        index = 1
+        loss = 0
+        previous_loss = 0
         for epoch in range(0, self.cfg.TRAIN.EPOCHS):
 
             batch_count = 1
 
             while data_set.hasNextBatch():
-
+                use_previous_loss = False
                 batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
-
                 if self.has_positive_in_label(batch_labels):
                     if self.has_negative_in_label(batch_labels):
                         if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):
-                            sess.run([self.classify_loss_with_pos_neg_with_hard_mining_optimizer],
-                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                            _, loss = sess.run([self.classify_loss_with_pos_neg_with_hard_mining_optimizer,
+                                                self.classify_loss_with_pos_neg_with_hard_mining],
+                                               feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                          self.labels: batch_labels})
                         else:
-                            sess.run([self.classify_loss_with_pos_neg_without_hard_mining_optimizer],
-                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                            _, loss = sess.run([self.classify_loss_with_pos_neg_without_hard_mining_optimizer,
+                                                self.classify_loss_with_pos_neg_without_hard_mining],
+                                               feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                          self.labels: batch_labels})
                     else:
-                        sess.run([self.classify_loss_without_neg_optimizer],
-                                 feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                        _, loss = sess.run([self.classify_loss_without_neg_optimizer, self.classify_loss_without_neg],
+                                           feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                      self.labels: batch_labels})
                 else:
                     if self.has_negative_in_label(batch_labels):
                         if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):
-                            sess.run([self.classify_loss_without_pos_with_hard_mining],
-                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                            _, loss = sess.run([self.classify_loss_without_pos_with_hard_mining_optimizer,
+                                                self.classify_loss_without_pos_with_hard_mining],
+                                               feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                          self.labels: batch_labels})
                         else:
-                            sess.run([self.classify_loss_without_pos_without_hard_mining_optimizer],
-                                     feed_dict={self.X: batch_data, self.coord: batch_coord, self.labels: batch_labels})
+                            _, loss = sess.run([self.classify_loss_without_pos_without_hard_mining_optimizer,
+                                                self.classify_loss_without_pos_without_hard_mining],
+                                               feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                          self.labels: batch_labels})
                     else:
-                        print("Can not find any label data from the dataset in this batch. Skip it")
-                        continue
+                        print("Can not find any label data from the data-set in this batch. Skip it")
+                        use_previous_loss = True
 
                 if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
                     print("Current batch is %d" % batch_count)
 
                 batch_count += 1
+                if use_previous_loss:
+                    average_loss = previous_loss/5
+                else:
+                    average_loss = loss/5
+                feed = {average_loss_holder: average_loss}
+                average_loss_str = sess.run(average_loss_tensor, feed_dict=feed)
+                writer.add_summary(average_loss_str, index)
+                index += 1
+                print("The average loss is:{}".format(average_loss))
+                writer.flush()
+                previous_loss = loss
 
             print("Epoch %d finished." % epoch)
             data_set.reset()

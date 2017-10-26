@@ -445,3 +445,55 @@ def DetectorDataAugment(sample, target, bboxes, coord, ifflip=True, ifrotate=Tru
                 target[ax] = np.array(sample.shape[ax + 1]) - target[ax]
                 bboxes[:, ax] = np.array(sample.shape[ax + 1]) - bboxes[:, ax]
     return sample, target, bboxes, coord
+
+def DetectorDataAugmentRotate(sample, target, bboxes, coord, angle=90):
+    validrot = False
+    counter = 0
+    while not validrot:
+        newtarget = np.copy(target)
+        newbboxes = np.copy(bboxes)
+        size = np.array(sample.shape[2:4]).astype('float')
+        rotmat = np.array([[np.cos(angle / 180 * np.pi), -np.sin(angle / 180 * np.pi)],
+                           [np.sin(angle / 180 * np.pi), np.cos(angle / 180 * np.pi)]])
+        newtarget[1:3] = np.dot(rotmat, target[1:3] - size / 2) + size / 2
+        if np.all(newtarget[:3] > target[3]) and np.all(newtarget[:3] < np.array(sample.shape[1:4]) - newtarget[3]):
+            newsample = rotate(sample, angle, axes=(2, 3), reshape=False)
+            newcoord = rotate(coord, angle, axes=(2, 3), reshape=False)
+            for box in newbboxes:
+                  box[1:3] = np.dot(rotmat, box[1:3] - size / 2) + size / 2
+            return newsample, newtarget, newbboxes, newcoord, True
+
+        else:
+            counter += 1
+            if counter == 3:
+                 break
+    return None, None, None, None, False
+
+def DetectorDataAugmentSwap(sample, target, bboxes, coord):
+    if sample.shape[1] == sample.shape[2] and sample.shape[1] == sample.shape[3]:
+        axisorder = np.random.permutation(3)
+        newsample = np.transpose(sample, np.concatenate([[0], axisorder + 1]))
+        newcoord = np.transpose(coord, np.concatenate([[0], axisorder + 1]))
+        newtarget = np.copy(target)
+        newtarget[:3] = target[:3][axisorder]
+        newbboxes = np.copy(bboxes)
+        newbboxes[:, :3] = bboxes[:, :3][:, axisorder]
+        return newsample, newtarget, newbboxes, newcoord, True
+    return None, None, None, None, False
+
+def DetectorDataAugmentFlip(sample, target, bboxes, coord):
+    flipid = np.array([np.random.randint(2), np.random.randint(2), np.random.randint(2)]) * 2 - 1
+    newsample = np.ascontiguousarray(sample[:, ::flipid[0], ::flipid[1], ::flipid[2]])
+    newcoord = np.ascontiguousarray(coord[:, ::flipid[0], ::flipid[1], ::flipid[2]])
+    newtarget = np.copy(target)
+    newbboxes = np.copy(bboxes)
+    success = False
+    for ax in range(3):
+        if flipid[ax] == -1:
+            sucess = True
+            newtarget[ax] = np.array(sample.shape[ax + 1]) - target[ax]
+            newbboxes[:, ax] = np.array(sample.shape[ax + 1]) - bboxes[:, ax]
+    if success:
+        return newsample, newtarget, newbboxes, newcoord, True
+    else:
+        return None, None, None, None, False

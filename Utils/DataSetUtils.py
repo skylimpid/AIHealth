@@ -69,6 +69,7 @@ class Crop(object):
             crop_size = (np.array(self.crop_size).astype('float') / scale).astype('int')
         else:
             crop_size = self.crop_size
+
         bound_size = self.bound_size
         target = np.copy(target)
         bboxes = np.copy(bboxes)
@@ -86,8 +87,7 @@ class Crop(object):
             if s > e:
                 start.append(np.random.randint(e, s))  # !
             else:
-                start.append(int(target[i]) - crop_size[i] / 2 + np.random.randint(-bound_size / 2, bound_size / 2))
-
+                start.append(int(target[i]) - int(crop_size[i] / 2) + np.random.randint(-bound_size / 2, bound_size / 2))
         normstart = np.array(start).astype('float32') / np.array(imgs.shape[1:]) - 0.5
         normsize = np.array(crop_size).astype('float32') / np.array(imgs.shape[1:])
         xx, yy, zz = np.meshgrid(np.linspace(normstart[0], normstart[0] + normsize[0], self.crop_size[0] / self.stride),

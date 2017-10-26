@@ -63,11 +63,11 @@ __C.DIR.classifier_net_validate_data_path = __C.DIR.train_split_data_path + KAGG
 
 # HyperParameters for Training.
 __C.TRAIN = edict()
-__C.TRAIN.LEARNING_RATE = 0.01
+__C.TRAIN.LEARNING_RATE = 0.1
 __C.TRAIN.LEARNING_RATE_STEP_SIZE = 100
 __C.TRAIN.MOMENTUM = 0.9
 __C.TRAIN.DISPLAY_STEPS = 2
-__C.TRAIN.BATCH_SIZE = 1
-__C.TRAIN.EPOCHS = 10
+__C.TRAIN.BATCH_SIZE = 5
+__C.TRAIN.EPOCHS = 500
 __C.TRAIN.SAVE_STEPS = 100
 __C.TRAIN.DATA_SPLIT_RATIO = 0.2

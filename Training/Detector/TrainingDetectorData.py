@@ -26,10 +26,6 @@ class TrainingDetectorData(DataSet):
         #print("test:{}".format(idcs))
 
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
-        self.kagglenames = [f for f in self.filenames if len(f.split('/')[-1].split('_')[0]) > 20]
-        #print("kagglenames:{}".format(self.kagglenames))
-        self.lunanames = [f for f in self.filenames if len(f.split('/')[-1].split('_')[0]) < 20]
-        #print("lunanames:{}".format(self.lunanames))
 
         labels = []
 
@@ -87,11 +83,10 @@ class TrainingDetectorData(DataSet):
                                                             ifrotate=self.augtype['rotate'],
                                                             ifswap=self.augtype['swap'])
             else:
-                randimid = np.random.randint(len(self.kagglenames))
-                filename = self.kagglenames[randimid]
+                randimid = np.random.randint(len(self.filenames))
+                filename = self.filenames[randimid]
                 imgs = np.load(filename)
                 bboxes = self.sample_bboxes[randimid]
-                isScale = self.augtype['scale'] and (self.phase == 'train')
                 sample, target, bboxes, coord = self.crop(imgs, [], bboxes, isScale=False, isRand=True)
             label = self.label_mapping(sample.shape[1:], target, bboxes)
             sample = (sample.astype(np.float32) - 128) / 128
@@ -151,7 +146,6 @@ class TrainingDetectorData(DataSet):
                 nzhws.append(nzhw)
                 self.index = self.index + 1
             return samples, labels, coords, nzhws
-
 
     def hasNextBatch(self):
         return self.index < self.length

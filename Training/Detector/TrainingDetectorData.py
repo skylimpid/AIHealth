@@ -3,6 +3,7 @@ from Utils.DataSet import DataSet
 from Utils.DataSetUtils import Crop, LabelMapping, DetectorDataAugmentRotate, DetectorDataAugmentFlip
 import time
 import os
+import math
 
 class TrainingDetectorData(DataSet):
     def __init__(self, data_dir, split_path, config, phase='train', split_comber=None):
@@ -18,6 +19,7 @@ class TrainingDetectorData(DataSet):
         self.augtype = config['augtype']
         self.pad_value = config['pad_value']
         self.split_comber = split_comber
+        self.r_rand = config['r_rand_crop']
         idcs = np.load(split_path)
         if phase != 'test':
             idcs = [f for f in idcs if (f not in self.blacklist)]
@@ -169,7 +171,7 @@ class TrainingDetectorData(DataSet):
 
     def __len__(self):
         if self.phase == 'train':
-            return len(self.bboxes)
+            return math.ceil(len(self.bboxes)/(1 - self.r_rand))
         elif self.phase == 'val':
             return len(self.bboxes)
         else:
@@ -227,9 +229,15 @@ if __name__ == "__main__":
                                     config,
                                     phase='train')
 
+    data, labels, coords = data_set.__getitem__(0)
+    print(data.shape)
+    print(labels.shape)
+    print(coords.shape)
+    """
     batch_data, batch_labels, batch_coord = data_set.getNextBatch(500)
     print(batch_labels.shape)
     print(batch_data.shape)
     print(batch_coord.shape)
 
     print(data_set.hasNextBatch())
+    """

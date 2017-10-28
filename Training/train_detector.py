@@ -67,8 +67,7 @@ class DetectorTrainer(object):
         writer = tf.summary.FileWriter(DETECTOR_NET_TENSORBOARD_LOG_DIR)
         writer.add_graph(sess.graph)
 
-        value_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
-        saver = tf.train.Saver(value_list, max_to_keep=10)
+        saver = tf.train.Saver(max_to_keep=10)
 
         if not os.path.exists(cfg.DIR.detector_net_saver_dir):
             os.makedirs(cfg.DIR.detector_net_saver_dir)

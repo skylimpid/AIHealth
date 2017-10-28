@@ -490,7 +490,7 @@ def DetectorDataAugmentFlip(sample, target, bboxes, coord):
     success = False
     for ax in range(3):
         if flipid[ax] == -1:
-            sucess = True
+            success = True
             newtarget[ax] = np.array(sample.shape[ax + 1]) - target[ax]
             newbboxes[:, ax] = np.array(sample.shape[ax + 1]) - bboxes[:, ax]
     if success:

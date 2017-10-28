@@ -3,7 +3,6 @@ from Utils.DataSet import DataSet
 from Utils.DataSetUtils import Crop, LabelMapping, DetectorDataAugmentRotate, DetectorDataAugmentFlip
 import time
 import os
-import random
 
 class TrainingDetectorData(DataSet):
     def __init__(self, data_dir, split_path, config, phase='train', split_comber=None):
@@ -16,7 +15,6 @@ class TrainingDetectorData(DataSet):
         sizelim3 = config['sizelim3'] / config['reso']
         self.blacklist = config['blacklist']
         self.isScale = config['aug_scale']
-        self.r_rand = config['r_rand_crop']
         self.augtype = config['augtype']
         self.pad_value = config['pad_value']
         self.split_comber = split_comber
@@ -48,14 +46,14 @@ class TrainingDetectorData(DataSet):
                         if t[3] > sizelim3:
                             self.bboxes += [[np.concatenate([[i], t])]] * 4
             self.bboxes = np.concatenate(self.bboxes, axis=0)
-        #print("bboxes:{}".format(self.bboxes))
+
         self.crop = Crop(config)
         self.label_mapping = LabelMapping(config, self.phase)
         self.index = 0
         self.length = self.__len__()
-        self.sample_pool=[]
-        self.label_pool=[]
-        self.coord_pool=[]
+        self.sample_pool = None
+        self.label_pool = None
+        self.coord_pool = None
 
     def __getitem__(self, idx, split=None):
         t = time.time()
@@ -145,7 +143,7 @@ class TrainingDetectorData(DataSet):
             sample = (sample.astype(np.float32) - 128) / 128
             # if filename in self.kagglenames and self.phase=='train':
             #    label[label==-1]=0
-            return sample.tolist(), label.tolist(), coord.tolist()
+            return sample, label, coord
         else:
             imgs = np.load(self.filenames[idx])
             bboxes = self.sample_bboxes[idx]
@@ -171,7 +169,7 @@ class TrainingDetectorData(DataSet):
 
     def __len__(self):
         if self.phase == 'train':
-            return len(self.bboxes) / (1 - self.r_rand)
+            return len(self.bboxes)
         elif self.phase == 'val':
             return len(self.bboxes)
         else:
@@ -179,29 +177,42 @@ class TrainingDetectorData(DataSet):
 
     def getNextBatch(self, batch_size):
         assert(self.phase != 'test')
-        while(len(self.sample_pool) < batch_size and self.index < self.length):
+
+        while (self.sample_pool is None or len(self.sample_pool) < batch_size) and self.index < self.length:
+
             sample, label, coord = self.__getitem__(self.index)
-            self.sample_pool.extend(sample)
-            self.label_pool.extend(label)
-            self.coord_pool.extend(coord)
+            if self.sample_pool is None:
+                self.sample_pool = np.copy(sample)
+                self.label_pool = np.copy(label)
+                self.coord_pool = np.copy(coord)
+            else:
+                self.sample_pool = np.concatenate((self.sample_pool, sample), axis=0)
+                self.label_pool = np.concatenate((self.label_pool, label), axis=0)
+                self.coord_pool = np.concatenate((self.coord_pool, coord), axis=0)
             self.index += 1
 
         if len(self.sample_pool) >= batch_size:
-            samples = [self.sample_pool.pop(random.randrange(len(self.sample_pool))) for _ in range(batch_size)]
-            labels = [self.label_pool.pop(random.randrange(len(self.label_pool))) for _ in range(batch_size)]
-            coords = [self.coord_pool.pop(random.randrange(len(self.coord_pool))) for _ in range(batch_size)]
+            np.random.shuffle(self.sample_pool)
+            np.random.shuffle(self.label_pool)
+            np.random.shuffle(self.coord_pool)
+            samples = np.copy(self.sample_pool[0:batch_size])
+            labels = np.copy(self.label_pool[0:batch_size])
+            coords = np.copy(self.coord_pool[0:batch_size])
+            self.sample_pool = self.sample_pool[batch_size:]
+            self.label_pool = self.label_pool[batch_size:]
+            self.coord_pool = self.coord_pool[batch_size:]
             return samples, labels, coords
         else:
             samples = np.copy(self.sample_pool)
             labels = np.copy(self.label_pool)
             coords = np.copy(self.coord_pool)
-            self.sample_pool.clear()
-            self.label_pool.clear()
-            self.coord_pool.clear()
+            self.sample_pool = None
+            self.label_pool = None
+            self.coord_pool= None
             return samples, labels, coords
 
     def hasNextBatch(self):
-        return self.index < self.length or len(self.sample_pool) > 0
+        return self.index < self.length or self.sample_pool is not None
 
     def reset(self):
         self.index = 0
@@ -215,10 +226,10 @@ if __name__ == "__main__":
                                     cfg.DIR.detector_net_train_data_path,
                                     config,
                                     phase='train')
-    import tensorflow as tf
-    batch_data, batch_labels, batch_coord = data_set.getNextBatch(100)
-    print(tf.stack(batch_labels).shape)
-    print(tf.stack(batch_data).shape)
-    print(tf.stack(batch_coord).shape)
+
+    batch_data, batch_labels, batch_coord = data_set.getNextBatch(500)
+    print(batch_labels.shape)
+    print(batch_data.shape)
+    print(batch_coord.shape)
 
     print(data_set.hasNextBatch())

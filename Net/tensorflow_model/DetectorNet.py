@@ -6,7 +6,7 @@ from Utils.utils import GetPBB
 config = {}
 config['anchors'] = [10,30,60]
 config['chanel'] = 1
-config['crop_size'] = [128, 128, 128]
+config['crop_size'] = [96, 96, 96]
 config['stride'] = 4
 config['max_stride'] = 16
 config['num_neg'] = 800
@@ -29,7 +29,7 @@ class DecetorNet(object):
 
     DATA_FORMAT = 'channels_first'
 
-    def __init__(self, img_row=128, img_col=128, img_depth=128, img_channel=1):
+    def __init__(self, img_row=96, img_col=96, img_depth=96, img_channel=1):
         self.img_row = img_row
         self.img_col = img_col
         self.img_depth = img_depth
@@ -395,11 +395,11 @@ def get_model():
 if __name__ == '__main__':
     # if we specify a number instead of None, it works
     #X = tf.placeholder(tf.float32, shape=(100, 1, 128, 128, 128))
-    X = tf.placeholder(tf.float32, shape=(None, 1, 128, 128, 128))
+    X = tf.placeholder(tf.float32, shape=(None, 1, 96, 96, 96))
 
     # if we specify a number instead of None, it works
     #coord = tf.placeholder(tf.float32, shape=(100, 3, 32, 32, 32))
-    coord = tf.placeholder(tf.float32, shape=(None, 3, 32, 32, 32))
+    coord = tf.placeholder(tf.float32, shape=(None, 3, 24, 24, 24))
     net = DecetorNet()
     net.getDetectorNet(X, coord)
 

@@ -27,28 +27,28 @@ class DetectorTrainer(object):
     # Detect if the provided tensor 'labels' contains +1 labels.
     def has_positive_in_label(self, labels):
 
-        labels = tf.reshape(tf.convert_to_tensor(labels), shape=(-1, 5))
+        labels = labels.reshape((-1, 5))
         pos_idcs = labels[:, 0] > 0.5
 
-        if tf.reduce_sum(tf.cast(pos_idcs, dtype=tf.int32)).eval() > 0:
+        if np.sum(pos_idcs) > 0:
             return True
 
         return False
 
     def has_negative_in_label(self, labels):
-        labels = tf.reshape(tf.convert_to_tensor(labels), shape=(-1, 5))
-        pos_idcs = labels[:, 0] < -0.5
+        labels = labels.reshape((-1, 5))
+        neg_idcs = labels[:, 0] < -0.5
 
-        if tf.reduce_sum(tf.cast(pos_idcs, dtype=tf.int32)).eval() > 0:
+        if np.sum(neg_idcs) > 0:
             return True
 
         return False
 
     def need_hard_mining(self, labels, hard_minng):
-        labels = tf.reshape(tf.convert_to_tensor(labels), shape=(-1, 5))
+        labels = labels.reshape((-1, 5))
         pos_idcs = labels[:, 0] < -0.5
 
-        if tf.reduce_sum(tf.cast(pos_idcs, dtype=tf.int32)).eval() > hard_minng:
+        if np.sum(pos_idcs) > hard_minng:
             return True
 
         return False
@@ -87,7 +87,8 @@ class DetectorTrainer(object):
         previous_loss_pos = 0
         loss_neg = 0
         previous_loss_neg = 0
-        for epoch in range(0, self.cfg.TRAIN.EPOCHS):
+        tf.get_default_graph().finalize()
+        for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
 
             batch_count = 1
             while data_set.hasNextBatch():
@@ -167,9 +168,9 @@ class DetectorTrainer(object):
 
     def build_model(self):
 
-        self.X = tf.placeholder(tf.float32, shape=[None, 1, 128, 128, 128])
-        self.coord = tf.placeholder(tf.float32, shape=[None, 3, 32, 32, 32])
-        self.labels = tf.placeholder(tf.float32, shape=[None, 32, 32, 32, 3, 5])
+        self.X = tf.placeholder(tf.float32, shape=[None, 1, 96, 96, 96])
+        self.coord = tf.placeholder(tf.float32, shape=[None, 3, 24, 24, 24])
+        self.labels = tf.placeholder(tf.float32, shape=[None, 24, 24, 24, 3, 5])
 
         self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 

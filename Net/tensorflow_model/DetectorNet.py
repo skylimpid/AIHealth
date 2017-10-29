@@ -1,12 +1,13 @@
 import tensorflow as tf
 from Net.Detector_Net_Loss import DetectorNetLoss
 from Utils.utils import GetPBB
+from Training.constants import DIMEN_X, DIMEN_Y
 
 
 config = {}
 config['anchors'] = [10,30,60]
 config['chanel'] = 1
-config['crop_size'] = [96, 96, 96]
+config['crop_size'] = [DIMEN_X, DIMEN_X, DIMEN_X]
 config['stride'] = 4
 config['max_stride'] = 16
 config['num_neg'] = 800
@@ -29,7 +30,7 @@ class DecetorNet(object):
 
     DATA_FORMAT = 'channels_first'
 
-    def __init__(self, img_row=96, img_col=96, img_depth=96, img_channel=1):
+    def __init__(self, img_row=DIMEN_X, img_col=DIMEN_X, img_depth=DIMEN_X, img_channel=1):
         self.img_row = img_row
         self.img_col = img_col
         self.img_depth = img_depth

@@ -9,6 +9,7 @@ from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
 from Training.constants import DETECTOR_NET_TENSORBOARD_LOG_DIR
+from Training.constants import DIMEN_X, DIMEN_Y
 
 
 class DetectorTrainer(object):
@@ -89,7 +90,8 @@ class DetectorTrainer(object):
         tf.get_default_graph().finalize()
         for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
 
-            batch_count = 1
+            batch_count = 0
+            batch_step = 0
             while data_set.hasNextBatch():
                 use_previous_loss = False
                 batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
@@ -141,11 +143,15 @@ class DetectorTrainer(object):
                 previous_loss_pos_neg = loss_pos_neg
                 previous_loss_pos = loss_pos
                 previous_loss_neg = loss_neg
-                if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
-                    print("Current batch is %d" % batch_count)
-                batch_count += 1
 
-            print("Epoch %d finished." % epoch)
+                batch_step += 1
+                if batch_step % self.cfg.TRAIN.DISPLAY_STEPS == 0:
+                    print("Batching step: %d" % batch_step)
+
+                batch_count += len(batch_labels)
+
+            print("Epoch %d finished on %d batches." % (epoch, batch_count))
+
             data_set.reset()
             if epoch != 0 and epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
                 filename = self.cfg.DIR.detector_net_saver_file_prefix + '{:d}'.format(epoch+1)
@@ -167,9 +173,9 @@ class DetectorTrainer(object):
 
     def build_model(self):
 
-        self.X = tf.placeholder(tf.float32, shape=[None, 1, 96, 96, 96])
-        self.coord = tf.placeholder(tf.float32, shape=[None, 3, 24, 24, 24])
-        self.labels = tf.placeholder(tf.float32, shape=[None, 24, 24, 24, 3, 5])
+        self.X = tf.placeholder(tf.float32, shape=[None, 1, DIMEN_X, DIMEN_X, DIMEN_X])
+        self.coord = tf.placeholder(tf.float32, shape=[None, 3, DIMEN_Y, DIMEN_Y, DIMEN_Y])
+        self.labels = tf.placeholder(tf.float32, shape=[None, DIMEN_Y, DIMEN_Y, DIMEN_Y, 3, 5])
 
         self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 

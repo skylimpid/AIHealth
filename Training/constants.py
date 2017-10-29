@@ -23,4 +23,8 @@ KAGGLE_VALIDATE_DATA = "kaggle_validate_data.npy"
 LUNA_TRAIN_DATA = "luna_train_data.npy"
 LUNA_VALIDATE_DATA = "luna_validate_data.npy"
 
+# TF dimension for image sizes, put in a single place for easily managing all
+DIMEN_X = 96  # input dimension size, changed from 128 to 96
+DIMEN_Y = 24  # output dimension size, changed from 32 to 24
+
 

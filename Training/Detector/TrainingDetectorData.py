@@ -1,9 +1,11 @@
-import numpy as np
-from Utils.DataSet import DataSet
-from Utils.DataSetUtils import Crop, LabelMapping, DetectorDataAugmentRotate, DetectorDataAugmentFlip
 import time
 import os
 import math
+
+import numpy as np
+from Utils.DataSet import DataSet
+from Utils.DataSetUtils import Crop, LabelMapping, DetectorDataAugmentRotate, DetectorDataAugmentFlip
+
 
 class TrainingDetectorData(DataSet):
     def __init__(self, data_dir, split_path, config, phase='train', split_comber=None):

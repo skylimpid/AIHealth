@@ -4,7 +4,8 @@ import time
 import numpy as np
 
 from Utils.DataSet import DataSet
-from Utils.utils import nms, iou
+#from Utils.utils import nms, iou
+from Utils.nms_cython import nms, iou
 from Utils.DataSetUtils import simpleCrop, sample, ClassifierDataAugment
 
 

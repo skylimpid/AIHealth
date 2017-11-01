@@ -96,22 +96,6 @@ class TrainingDetectorData(DataSet):
                             label_local = self.label_mapping(sample2.shape[1:], target2, bboxes2)
                             label_total = np.concatenate((label_total, np.expand_dims(label_local, axis=0)), axis=0)
 
-                        sample3, target3, bboxes3, coord3, success3 = DetectorDataAugmentRotate(sample, target, bboxes,
-                                                                                                coord, angle=180)
-                        if success3:
-                            sample_total = np.concatenate((sample_total, np.expand_dims(sample3, axis=0)), axis=0)
-                            coord_total = np.concatenate((coord_total, np.expand_dims(coord3, axis=0)), axis=0)
-                            label_local = self.label_mapping(sample3.shape[1:], target3, bboxes3)
-                            label_total = np.concatenate((label_total, np.expand_dims(label_local, axis=0)), axis=0)
-
-                        sample4, target4, bboxes4, coord4, success4 = DetectorDataAugmentRotate(sample, target, bboxes,
-                                                                                                coord, angle=270)
-                        if success4:
-                            sample_total = np.concatenate((sample_total, np.expand_dims(sample4, axis=0)), axis=0)
-                            coord_total = np.concatenate((coord_total, np.expand_dims(coord4, axis=0)), axis=0)
-                            label_local = self.label_mapping(sample4.shape[1:], target4, bboxes4)
-                            label_total = np.concatenate((label_total, np.expand_dims(label_local, axis=0)), axis=0)
-
                     if self.augtype['swap']:
                         sample2, target2, bboxes2, coord2, success2 = DetectorDataAugmentRotate(sample, target,
                                                                                                 bboxes, coord)

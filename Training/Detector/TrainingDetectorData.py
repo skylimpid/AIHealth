@@ -174,9 +174,12 @@ class TrainingDetectorData(DataSet):
                 self.label_pool = np.copy(label)
                 self.coord_pool = np.copy(coord)
             else:
-                self.sample_pool = np.concatenate((self.sample_pool, sample), axis=0)
-                self.label_pool = np.concatenate((self.label_pool, label), axis=0)
-                self.coord_pool = np.concatenate((self.coord_pool, coord), axis=0)
+                try:
+                    self.sample_pool = np.concatenate((self.sample_pool, sample), axis=0)
+                    self.label_pool = np.concatenate((self.label_pool, label), axis=0)
+                    self.coord_pool = np.concatenate((self.coord_pool, coord), axis=0)
+                except ValueError:
+                    continue
             self.index += 1
 
         if len(self.sample_pool) >= batch_size:
@@ -184,26 +187,27 @@ class TrainingDetectorData(DataSet):
             np.random.shuffle(self.label_pool)
             np.random.shuffle(self.coord_pool)
             samples = np.copy(self.sample_pool[0:batch_size])
-            labels = np.copy(self.label_pool[0:batch_size])
-            coords = np.copy(self.coord_pool[0:batch_size])
+            labels_out = np.copy(self.label_pool[0:batch_size])
+            coords_out = np.copy(self.coord_pool[0:batch_size])
             self.sample_pool = self.sample_pool[batch_size:]
             self.label_pool = self.label_pool[batch_size:]
             self.coord_pool = self.coord_pool[batch_size:]
-            return samples, labels, coords
+            return samples, labels_out, coords_out
         else:
             samples = np.copy(self.sample_pool)
-            labels = np.copy(self.label_pool)
-            coords = np.copy(self.coord_pool)
+            labels_out = np.copy(self.label_pool)
+            coords_out = np.copy(self.coord_pool)
             self.sample_pool = None
             self.label_pool = None
             self.coord_pool= None
-            return samples, labels, coords
+            return samples, labels_out, coords_out
 
     def hasNextBatch(self):
         return self.index < self.length or self.sample_pool is not None
 
     def reset(self):
         self.index = 0
+
 
 if __name__ == "__main__":
     from Net.tensorflow_model.DetectorNet import get_model

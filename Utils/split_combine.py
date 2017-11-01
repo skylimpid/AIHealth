@@ -20,7 +20,7 @@ class SplitComb():
         if margin is None:
             margin = self.margin
 
-        assert(side_len > margin)
+        assert(side_len >= margin)
         assert(side_len % max_stride == 0)
         assert(margin % max_stride == 0)
 
@@ -81,7 +81,7 @@ class SplitComb():
         margin = int(margin/stride)
 
         splits = []
-        for i in range(output.get_shape().as_list()[0]):
+        for i in range(len(output)):
             splits.append(output[i])
 
         output = -1000000 * np.ones((
@@ -103,7 +103,7 @@ class SplitComb():
                     ew = (iw + 1) * side_len
                    # print("idx:" + str(idx))
                     split = splits[idx][margin:margin + side_len, margin:margin + side_len, margin:margin + side_len]
-                    output[sz:ez, sh:eh, sw:ew, :, :] = split.eval()
+                    output[sz:ez, sh:eh, sw:ew, :, :] = split
                     idx += 1
 
         return output 

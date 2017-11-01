@@ -208,6 +208,8 @@ class DetectorTrainer(object):
         save_dir = os.path.join(self.cfg.DIR.bbox_path)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
+
+        sess.run(tf.global_variables_initializer())
         # load the previous trained detector_net model
         value_list = []
         value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
@@ -216,7 +218,7 @@ class DetectorTrainer(object):
 
         # get input data
         margin = 32
-        side_len = 64
+        side_len = 32
         split_combine = SplitComb(side_len=side_len, max_stride=self.net_config['max_stride'],
                                   stride=self.net_config['stride'], margin=margin,
                                   pad_value=self.net_config['pad_value'])
@@ -224,12 +226,9 @@ class DetectorTrainer(object):
                                           split_path=self.cfg.DIR.detector_net_train_data_path,
                                           config=self.net_config, split_comber=split_combine,
                                           phase='test')
-
-        sess.run(tf.global_variables_initializer())
         start = time.time()
         for id in range(input_data.__len__()):
             imgs, bboxes, coord2, nzhw, filename = input_data.__getitem__(id)
-
             filename = filename.split('/')[-1].split('_')[0]
             print("Start to predict user:{}".format(filename))
 
@@ -247,7 +246,7 @@ class DetectorTrainer(object):
                 if final_out is None:
                     final_out = out_predict
                 else:
-                    final_out = tf.concat([final_out, out_predict], axis=0)
+                    final_out = np.concatenate((final_out, out_predict), axis=0)
 
                 index = index + self.cfg.TRAIN.BATCH_SIZE
 
@@ -257,8 +256,8 @@ class DetectorTrainer(object):
                 if final_out is None:
                     final_out = out_predict
                 else:
-                    final_out = tf.concat([final_out, out_predict], axis=0)
-
+                    final_out = np.concatenate((final_out, out_predict), axis=0)
+            print(final_out.shape)
             end_time = time.time()
             print("Predict user:{} spend: {}".format(filename, end_time - start_time))
             print("start to post-process the predict result for user:{}".format(filename))
@@ -280,5 +279,5 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        instance.train(sess, continue_training=False)
-        #instance.predict(sess)
+        #instance.train(sess, continue_training=False)
+        instance.predict(sess)

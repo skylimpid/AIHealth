@@ -153,7 +153,7 @@ class LabelMapping(object):
 
         output_size = []
         for i in range(3):
-            assert (input_size[i] % stride == 0)
+#            assert (input_size[i] % stride == 0)
             output_size.append(int(input_size[i] / stride))
 
         label = np.zeros(output_size + [len(anchors), 5], np.float32)

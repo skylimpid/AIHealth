@@ -58,14 +58,14 @@ class DecetorNet(object):
         coord = tf.transpose(coord, perm=[0, 2, 3, 4, 1])
         with tf.variable_scope('global/detector_scope'):
             # construct preblock
-            preBlock_0 = tf.layers.conv3d(X, 5, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
+            preBlock_0 = tf.layers.conv3d(X, 20, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
                                           data_format=self.DATA_FORMAT,
                                           name="pre_block_conv3d_1_after_input")
             # preBlock_1 = tf.layers.batch_normalization(preBlock_0, axis=1, momentum=0.1, epsilon=1e-05)
             preBlock_1 = self.fused_batch_normalization(preBlock_0, name="bn_pre_block_conv3d_1")
             preBlock_relu1 = tf.nn.relu(preBlock_1, name="relu_pre_block_conv3d_1")
 
-            preBlock_3 = tf.layers.conv3d(preBlock_relu1, 5, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
+            preBlock_3 = tf.layers.conv3d(preBlock_relu1, 20, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
                                           data_format=self.DATA_FORMAT, name="pre_block_conv3d_2")
             # preBlock_4 = tf.layers.batch_normalization(preBlock_3, axis=1, momentum=0.1, epsilon=1e-05)
             preBlock_4 = self.fused_batch_normalization(preBlock_3, name="bn_pre_block_conv3d_2")

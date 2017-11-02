@@ -9,11 +9,10 @@ from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
 from Training.constants import DETECTOR_NET_TENSORBOARD_LOG_DIR
-from Training.constants import DIMEN_X, DIMEN_Y
-
+from Training.constants import DIMEN_X, DIMEN_Y, MARGIN, SIDE_LEN
+from Utils.nms_cython import nms, iou
 
 class DetectorTrainer(object):
-
 
     """
     Initializer
@@ -24,6 +23,12 @@ class DetectorTrainer(object):
 
         self.build_model()
 
+        self.validate_average_iou_holder = tf.placeholder(tf.float32)
+        self.validate_average_iou_tensor = tf.summary.scalar("validate_average_iou", self.validate_average_iou_holder)
+
+        self.validate_nodule_predict_ratio_holder = tf.placeholder(tf.float32)
+        self.validate_nodule_predict_ratio_tensor = tf.summary.scalar("validate_average_nodule_predict_ratio",
+                                                                      self.validate_nodule_predict_ratio_holder)
 
     # Detect if the provided tensor 'labels' contains +1 labels.
     def has_positive_in_label(self, labels):
@@ -54,7 +59,7 @@ class DetectorTrainer(object):
 
         return False
 
-    def train(self, sess, continue_training=False, clear=True):
+    def train(self, sess, continue_training=False, clear=True, enable_validate=False):
         if clear:
             if os.path.exists(DETECTOR_NET_TENSORBOARD_LOG_DIR):
                 shutil.rmtree(DETECTOR_NET_TENSORBOARD_LOG_DIR)
@@ -146,6 +151,8 @@ class DetectorTrainer(object):
                 filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=epoch)
 
+            if epoch % self.cfg.VALIDATE_EPOCHES == 0 and enable_validate:
+                self.validate(sess=sess, writer=writer, epoch=epoch)
         filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, (self.cfg.DIR.detector_net_saver_file_prefix
                                                                       + 'final'))
         saver.save(sess, filename)
@@ -196,14 +203,132 @@ class DetectorTrainer(object):
             learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
             self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
 
-    def test(self):
+    def test(self, sess):
+        sess.run(tf.global_variables_initializer())
+        # load the previous trained detector_net model
+        value_list = []
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        saver = tf.train.Saver(value_list, max_to_keep=100)
+        saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
+        # get input data
+        split_combine = SplitComb(side_len=SIDE_LEN, max_stride=self.net_config['max_stride'],
+                                  stride=self.net_config['stride'], margin=MARGIN,
+                                  pad_value=self.net_config['pad_value'])
+        input_data = TrainingDetectorData(data_dir=self.cfg.DIR.preprocess_result_path,
+                                          split_path=self.cfg.DIR.detector_net_test_data_path,
+                                          config=self.net_config, split_comber=split_combine,
+                                          phase='test')
+        total_nodules = 0
+        predict_nodules = 0
+        average_iou = 0
+        for id in range(input_data.__len__()):
+            imgs, bboxes, coord2, nzhw, filename = input_data.__getitem__(id)
 
-        pass
+            total_size_per_img = imgs.shape[0]
 
-    def validate(self):
-        pass
+            index = 0
+            final_out = None
 
-    def predict(self, sess):
+            while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
+                feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
+                    self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
+                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
+                if final_out is None:
+                    final_out = out_predict
+                else:
+                    final_out = np.concatenate((final_out, out_predict), axis=0)
+
+                index = index + self.cfg.TRAIN.BATCH_SIZE
+
+            if index < total_size_per_img:
+                feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
+                    self.X: imgs[index:], self.coord: coord2[index:]})
+                if final_out is None:
+                    final_out = out_predict
+                else:
+                    final_out = np.concatenate((final_out, out_predict), axis=0)
+            output = split_combine.combine(final_out, nzhw=nzhw)
+            thresh = -3
+            pbb, _ = self.pbb(output, thresh, ismask=True)
+            pbb = pbb[pbb[:, 0] > self.cfg.TEST.DETECTOR_NODULE_CONFIDENCE]
+            pbb = nms(pbb, self.cfg.TEST.DETECTOR_NODULE_OVERLAP)
+            per_iou = 0
+            for p in pbb:
+                for l in bboxes:
+                    score = iou(p[1:5], l)
+                    if score > self.cfg.TEST.DETECTOR_NODULE_TH:
+                        per_iou += score
+                        predict_nodules += 1
+                        break
+            total_nodules += len(bboxes)
+            average_iou += per_iou/len(bboxes)
+
+        print("Total nodules:{}".format(total_nodules))
+        print("Found nodules from Detector-Net:{}".format(predict_nodules))
+        print("Average iou:{}".format(average_iou/input_data.__len__()))
+
+    def validate(self, sess, writer, epoch):
+
+        split_combine = SplitComb(side_len=SIDE_LEN, max_stride=self.net_config['max_stride'],
+                                  stride=self.net_config['stride'], margin=MARGIN,
+                                  pad_value=self.net_config['pad_value'])
+        input_data = TrainingDetectorData(data_dir=self.cfg.DIR.preprocess_result_path,
+                                          split_path=self.cfg.DIR.detector_net_test_data_path,
+                                          config=self.net_config, split_comber=split_combine,
+                                          phase='val')
+        total_nodules = 0
+        predict_nodules = 0
+        average_iou = 0
+        for id in range(input_data.__len__()):
+            imgs, bboxes, coord2, nzhw, filename = input_data.__getitem__(id)
+
+            total_size_per_img = imgs.shape[0]
+
+            index = 0
+            final_out = None
+
+            while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
+                feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
+                    self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
+                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
+                if final_out is None:
+                    final_out = out_predict
+                else:
+                    final_out = np.concatenate((final_out, out_predict), axis=0)
+
+                index = index + self.cfg.TRAIN.BATCH_SIZE
+
+            if index < total_size_per_img:
+                feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
+                    self.X: imgs[index:], self.coord: coord2[index:]})
+                if final_out is None:
+                    final_out = out_predict
+                else:
+                    final_out = np.concatenate((final_out, out_predict), axis=0)
+            output = split_combine.combine(final_out, nzhw=nzhw)
+            thresh = -3
+            pbb, _ = self.pbb(output, thresh, ismask=True)
+            pbb = pbb[pbb[:, 0] > self.cfg.TEST.DETECTOR_NODULE_CONFIDENCE]
+            pbb = nms(pbb, self.cfg.TEST.DETECTOR_NODULE_OVERLAP)
+            per_iou = 0
+            for p in pbb:
+                for l in bboxes:
+                    score = iou(p[1:5], l)
+                    if score > self.cfg.TEST.DETECTOR_NODULE_TH:
+                        per_iou += score
+                        predict_nodules += 1
+                        break
+            total_nodules += len(bboxes)
+            average_iou += per_iou/len(bboxes)
+
+        feed = {self.validate_average_iou_holder: average_iou / input_data.__len__(),
+                self.validate_nodule_predict_ratio_holder: predict_nodules/total_nodules}
+        iou, ratio = sess.run(self.validate_average_iou_tensor, self.validate_nodule_predict_ratio_tensor,
+                                    feed_dict=feed)
+        writer.add_summary(iou, epoch)
+        writer.add_summary(ratio, epoch)
+
+    def predict(self, sess, splt_path):
 
         save_dir = os.path.join(self.cfg.DIR.bbox_path)
         if not os.path.exists(save_dir):
@@ -217,13 +342,11 @@ class DetectorTrainer(object):
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 
         # get input data
-        margin = 32
-        side_len = 32
-        split_combine = SplitComb(side_len=side_len, max_stride=self.net_config['max_stride'],
-                                  stride=self.net_config['stride'], margin=margin,
+        split_combine = SplitComb(side_len=SIDE_LEN, max_stride=self.net_config['max_stride'],
+                                  stride=self.net_config['stride'], margin=MARGIN,
                                   pad_value=self.net_config['pad_value'])
         input_data = TrainingDetectorData(data_dir=self.cfg.DIR.preprocess_result_path,
-                                          split_path=self.cfg.DIR.detector_net_train_data_path,
+                                          split_path=splt_path,
                                           config=self.net_config, split_comber=split_combine,
                                           phase='test')
         start = time.time()
@@ -280,4 +403,4 @@ if __name__ == "__main__":
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
         #instance.train(sess, continue_training=False)
-        instance.predict(sess)
+        instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)

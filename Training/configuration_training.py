@@ -52,6 +52,7 @@ __C.DIR.train_split_data_path = DATA_BASE_DIR + "train_split/"
 #__C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
 __C.DIR.detector_net_train_data_path = __C.DIR.train_split_data_path + KAGGLE_TRAIN_DATA
 __C.DIR.detector_net_validate_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
+__C.DIR.detector_net_test_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
 
 __C.DIR.classifier_net_saver_dir = SYS_DIR + "/Trained_Models/ClassifierNetWeight"
 __C.DIR.classifier_net_saver_file_prefix = "classifier_model_weights_iter_"
@@ -71,4 +72,13 @@ __C.TRAIN.BATCH_SIZE = 5
 __C.TRAIN.EPOCHS = 500
 __C.TRAIN.SAVE_STEPS = 100
 __C.TRAIN.DATA_SPLIT_RATIO = 0.2
+__C.TRAIN.VALIDATE_EPOCHES = 50
+
+
+# Configurations for Testing
+__C.TEST = edict()
+__C.TEST.DETECTOR_NODULE_CONFIDENCE = 0.5
+__C.TEST.DETECTOR_NODULE_OVERLAP = 0.05
+__C.TEST.DETECTOR_NODULE_TH = 0.05
+
 

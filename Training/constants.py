@@ -28,3 +28,8 @@ DIMEN_X = 96  # input dimension size, changed from 128 to 96
 DIMEN_Y = 24  # output dimension size, changed from 32 to 24
 
 
+# For split the image
+MARGIN = 32
+SIDE_LEN = 32
+
+

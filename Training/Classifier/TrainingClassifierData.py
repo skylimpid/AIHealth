@@ -4,7 +4,6 @@ import time
 import numpy as np
 
 from Utils.DataSet import DataSet
-#from Utils.utils import nms, iou
 from Utils.nms_cython import nms, iou
 from Utils.DataSetUtils import simpleCrop, sample, ClassifierDataAugment
 
@@ -45,7 +44,7 @@ class TrainingClassifierData(DataSet):
             print(idx)
             pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
             pbb = pbb[pbb[:, 0] > config['conf_th']]
-            pbb = nms(pbb, config['nms_th'], self.topk*10)
+            pbb = nms(pbb, config['nms_th'], self.topk*100)
             lbb = np.load(os.path.join(bboxpath, idx + '_lbb.npy'))
             pbb_label = []
             for p in pbb:

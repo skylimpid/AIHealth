@@ -1,6 +1,7 @@
 import tensorflow as tf
 import os
 import time
+import shutil
 
 from Training.Classifier.TrainingClassifierData import TrainingClassifierData
 from Net.tensorflow_model.ClassiferNet import get_model
@@ -21,54 +22,68 @@ class ClassifierTrainer(object):
         self.detectorNet = detectorNet
         self.build_model()
 
-    def train(self, sess):
-        merged = tf.summary.merge_all()
+    def train(self, sess, clear=True):
+
+        if clear:
+            if os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
+                shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
+
+        average_loss_holder = tf.placeholder(tf.float32)
+        average_loss_tensor = tf.summary.scalar("training_loss", average_loss_holder)
+
+        average_accuracy_holder = tf.placeholder(tf.float32)
+        average_accuracy_tensor = tf.summary.scalar("training_accuracy", average_accuracy_holder)
+
         writer = tf.summary.FileWriter(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
         writer.add_graph(sess.graph)
 
-        value_list = []
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/classifier_scope'))
-        saver = tf.train.Saver(value_list, max_to_keep=100)
+        saver = tf.train.Saver(max_to_keep=100)
+
+        if not os.path.exists(cfg.DIR.classifier_net_saver_dir):
+            os.makedirs(cfg.DIR.classifier_net_saver_dir)
 
         var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/classifier_scope')
         sess.run(tf.variables_initializer(var_classifier))
 
-
-        sess.run(tf.global_variables_initializer())
         dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
                                          cfg.DIR.bbox_path,
                                          cfg.DIR.kaggle_full_labels,
                                          cfg.DIR.classifier_net_train_data_path,
                                          self.net_config,
                                          phase='train')
+
         start_time = time.time()
-        index = 1
-        for epoch in range(0, self.cfg.TRAIN.EPOCHS):
+        tf.get_default_graph().finalize()
+        for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
 
             batch_count = 1
-
+            total_loss = 0
+            total_accuracy = 0
             while dataset.hasNextBatch():
 
                 batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
-                merged_output,_, loss, accuracy_op = sess.run([merged,self.loss_1_optimizer, self.loss, self.accuracy],
-                                                              feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                                                         self.labels: batch_labels,
-                                                                         self.isnod: batch_isnode})
-                writer.add_summary(merged_output, index)
+                _, loss, accuracy_op = sess.run([self.loss_1_optimizer, self.loss, self.accuracy],
+                                                feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                           self.labels: batch_labels,
+                                                           self.isnod: batch_isnode})
                 if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
                     print("Current batch is %d" % batch_count)
 
                 batch_count += 1
-                index += 1
-                print("The loss is:{}".format(loss))
+                total_loss += loss
+                total_accuracy += accuracy_op
             print("Epoch %d finished." % epoch)
+            feed = {average_loss_holder: total_loss/batch_count, average_accuracy_holder: total_accuracy/batch_count}
+            average_loss_str, average_accuracy_str = sess.run([average_loss_tensor, average_accuracy_tensor],
+                                                              feed_dict=feed)
+            writer.add_summary(average_loss_str, epoch)
+            writer.add_summary(average_accuracy_str, epoch)
             dataset.reset()
-            if epoch != 0 and epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
-                filename = self.cfg.DIR.classifier_net_saver_file_prefix + '{:d}'.format(epoch+1)
+            if epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
+                filename = self.cfg.DIR.classifier_net_saver_file_prefix + '{:d}'.format(epoch)
                 filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, filename)
-                saver.save(sess, filename, global_step=(epoch+1))
+                saver.save(sess, filename, global_step=epoch)
 
         filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, (self.cfg.DIR.classifier_net_saver_file_prefix
                                                                         + 'final'))
@@ -83,8 +98,8 @@ class ClassifierTrainer(object):
 
         topK = self.net_config['topk']
 
-        self.X = tf.placeholder(tf.float32, shape=[None, topK, 1, 128, 128, 128])
-        self.coord = tf.placeholder(tf.float32, shape=[None, topK, 3, 32, 32, 32])
+        self.X = tf.placeholder(tf.float32, shape=[None, topK, 1, 96, 96, 96])
+        self.coord = tf.placeholder(tf.float32, shape=[None, topK, 3, 24, 24, 24])
         self.labels = tf.placeholder(tf.float32, shape=[None, 1])
         self.isnod = tf.placeholder(tf.float32, shape=[None, topK])
 
@@ -92,9 +107,8 @@ class ClassifierTrainer(object):
 
         loss_object = ClassiferNetLoss(self.net_config)
 
-        with tf.name_scope('loss'):
-            self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
-        tf.summary.scalar('loss', self.loss)
+        self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
+
         global_step = tf.Variable(0, trainable=False)
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
@@ -105,8 +119,6 @@ class ClassifierTrainer(object):
 
         correct_predict = tf.equal(self.labels[:,0], tf.cast(casePred >= 0.5, tf.float32))
         self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))
-        tf.summary.scalar("accuracy", self.accuracy)
-
 
     def test(self):
         pass
@@ -117,7 +129,6 @@ class ClassifierTrainer(object):
 
 
 if __name__ == "__main__":
-
 
     def get_variables_in_checkpoint_file(file_name):
         try:

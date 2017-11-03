@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from Net.tensorflow_model.DetectorNet import DecetorNet
 from Training.configuration_training import cfg
+from Training.constants import DIMEN_X, DIMEN_Y
 
 config = {}
 config['topk'] = 5
@@ -11,7 +12,7 @@ config['preload_val'] = True
 
 config['padmask'] = False
 
-config['crop_size'] = [128,128,128]
+config['crop_size'] = [DIMEN_X, DIMEN_X, DIMEN_X]
 config['scaleLim'] = [0.85,1.15]
 config['radiusLim'] = [6,100]
 config['jitter_range'] = 0.15
@@ -39,7 +40,7 @@ class ClassiferNet(object):
 
     DATA_FORMAT = 'channels_first'
 
-    def __init__(self, detectorNet, img_row=128, img_col=128, img_depth=128, img_channel=1):
+    def __init__(self, detectorNet, img_row=DIMEN_X, img_col=DIMEN_X, img_depth=DIMEN_X, img_channel=1):
         if detectorNet is None:
             self.detectorNet = DecetorNet()
         else:

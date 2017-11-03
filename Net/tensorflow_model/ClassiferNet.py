@@ -98,6 +98,9 @@ def get_model(trained_detectorNet):
     return config, net
 
 
+def get_config():
+    return config
+
 if __name__ == '__main__':
     X = tf.placeholder(tf.float32, shape=(None, 3, 1, 128, 128, 128))
     coord = tf.placeholder(tf.float32, shape=(None, 3, 3, 32, 32, 32))

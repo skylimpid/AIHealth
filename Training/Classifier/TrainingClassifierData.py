@@ -6,7 +6,7 @@ import numpy as np
 from Utils.DataSet import DataSet
 from Utils.nms_cython import nms, iou
 from Utils.DataSetUtils import simpleCrop, sample, ClassifierDataAugment
-
+from Training.configuration_training import cfg
 
 
 class TrainingClassifierData(DataSet):
@@ -40,24 +40,36 @@ class TrainingClassifierData(DataSet):
         idcs = [f.split('-')[0] for f in idcs]
         # print (idcs)
 
-        for idx in idcs:
-            print(idx)
-            pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
-            pbb = pbb[pbb[:, 0] > config['conf_th']]
-            pbb = nms(pbb, config['nms_th'], self.topk*100)
-            lbb = np.load(os.path.join(bboxpath, idx + '_lbb.npy'))
-            pbb_label = []
-            for p in pbb:
-                isnod = False
-                for l in lbb:
-                    score = iou(p[1:5], l)
-                    if score > config['detect_th']:
-                        isnod = True
-                        break
-                pbb_label.append(isnod)
+        load_candidate_box = False
+        load_pbb_label = False
+        if os.path.exists(cfg.DIR.classifier_net_intermediate_candidate_box):
+            self.candidate_box = np.load(cfg.DIR.classifier_net_intermediate_candidate_box).tolist()
+            load_candidate_box = True
+        if os.path.exists(cfg.DIR.classifier_net_intermediate_pbb_label):
+            self.pbb_label = np.load(cfg.DIR.classifier_net_intermediate_pbb_label).tolist()
+            load_pbb_label = True
+
+        if not (load_candidate_box and load_pbb_label):
+            for idx in idcs:
+                print(idx)
+                pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
+                pbb = pbb[pbb[:, 0] > config['conf_th']]
+                pbb = nms(pbb, config['nms_th'], self.topk*100)
+                lbb = np.load(os.path.join(bboxpath, idx + '_lbb.npy'))
+                pbb_label = []
+                for p in pbb:
+                    isnod = False
+                    for l in lbb:
+                        score = iou(p[1:5], l)
+                        if score > config['detect_th']:
+                            isnod = True
+                            break
+                    pbb_label.append(isnod)
                 #             if idx.startswith()
-            self.candidate_box.append(pbb)
-            self.pbb_label.append(np.array(pbb_label))
+                if not load_candidate_box:
+                    self.candidate_box.append(pbb)
+                if not load_pbb_label:
+                    self.pbb_label.append(np.array(pbb_label))
         self.crop = simpleCrop(config, phase)
         self.index = 0
         self.length = self.__len__()

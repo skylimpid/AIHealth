@@ -61,6 +61,9 @@ __C.DIR.classifier_net_saver_file_prefix = "classifier_model_weights_iter_"
 #__C.DIR.classifier_net_train_data_path = DATA_BASE_DIR + "full.npy"
 __C.DIR.classifier_net_train_data_path = __C.DIR.train_split_data_path + KAGGLE_TRAIN_DATA
 __C.DIR.classifier_net_validate_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
+__C.DIR.classifier_net_intermediate_candidate_box = DATA_BASE_DIR +"classifer_intermediate/candidate_box.npy"
+__C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifer_intermediate/pbb_label.npy"
+
 
 # HyperParameters for Training.
 __C.TRAIN = edict()

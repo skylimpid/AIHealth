@@ -28,6 +28,8 @@ class ClassifierTrainer(object):
             if os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
                 shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
 
+        sess.run(tf.global_variables_initializer())
+
         average_loss_holder = tf.placeholder(tf.float32)
         average_loss_tensor = tf.summary.scalar("training_loss", average_loss_holder)
 
@@ -54,6 +56,7 @@ class ClassifierTrainer(object):
 
         start_time = time.time()
         tf.get_default_graph().finalize()
+
         for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
 
             batch_count = 1
@@ -109,7 +112,7 @@ class ClassifierTrainer(object):
 
         self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
 
-        global_step = tf.Variable(0, trainable=False)
+        global_step = tf.Variable(0, trainable=False, name="classifier_global_step")
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
                                         self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.1, staircase=True)
@@ -147,15 +150,14 @@ if __name__ == "__main__":
                 variables_to_restore.append(v)
         return variables_to_restore
 
-    init = tf.global_variables_initializer()
-
     with tf.Session() as sess:
         detectorNet = DecetorNet()
         instance = ClassifierTrainer(cfg, detectorNet)
-        variables = tf.global_variables()
-        sess.run(init)
-        var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
-        restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
+        # variables = tf.global_variables()
+        # var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        # restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
+        var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
+        restorer = tf.train.Saver(var_detector)
         restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
         instance.train(sess)
 

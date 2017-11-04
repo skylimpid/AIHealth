@@ -68,7 +68,7 @@ __C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifer_interm
 # HyperParameters for Training.
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.1
-__C.TRAIN.LEARNING_RATE_STEP_SIZE = 50
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 1000
 __C.TRAIN.MOMENTUM = 0.9
 __C.TRAIN.DISPLAY_STEPS = 2
 __C.TRAIN.BATCH_SIZE = 1

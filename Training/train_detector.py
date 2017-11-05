@@ -151,7 +151,7 @@ class DetectorTrainer(object):
                 filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=epoch)
 
-            if epoch % self.cfg.VALIDATE_EPOCHES == 0 and enable_validate:
+            if epoch % self.cfg.TRAIN.VALIDATE_EPOCHES == 0 and enable_validate:
                 self.validate(sess=sess, writer=writer, epoch=epoch)
         filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, (self.cfg.DIR.detector_net_saver_file_prefix
                                                                       + 'final'))

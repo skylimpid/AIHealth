@@ -26,7 +26,6 @@ class TrainingDetectorData(DataSet):
         if phase != 'test':
             idcs = [f for f in idcs if (f not in self.blacklist)]
         #print("test:{}".format(idcs))
-
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
 
         labels = []
@@ -37,12 +36,18 @@ class TrainingDetectorData(DataSet):
                 l = np.array([])
             labels.append(l)
         #print("labels:{}".format(labels))
+
+        # Keep the original copy
         self.sample_bboxes = labels
+
+        ##
+        ## Filter bounding boxes, and also increase the presence for big ones
         if self.phase != 'test':
             self.bboxes = []
             for i, l in enumerate(labels):
                 if len(l) > 0:
                     for t in l:
+                        #t[3] -> diameter of the curated bounding box
                         if t[3] > sizelim:
                             self.bboxes.append([np.concatenate([[i], t])])
                         if t[3] > sizelim2:
@@ -64,6 +69,7 @@ class TrainingDetectorData(DataSet):
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
 
         isRandomImg = False
+        ## If we've reached the last of bboxes, will start random cropping for negative sampling
         if self.phase != 'test':
             if idx >= len(self.bboxes):
                 isRandom = True
@@ -79,9 +85,15 @@ class TrainingDetectorData(DataSet):
                 bbox = self.bboxes[idx]
                 filename = self.filenames[int(bbox[0])]
                 imgs = np.load(filename)
+                ## bboxes from the same patient
                 bboxes = self.sample_bboxes[int(bbox[0])]
                 isScale = self.augtype['scale'] and (self.phase == 'train')
                 sample, target, bboxes, coord = self.crop(imgs, bbox[1:], bboxes, isScale, isRandom)
+                ## sample: the cropped image part around the bounding box
+                ## target: the bbox[1:] in the new bounding box coordinate
+                ## bboxes: dito
+                ## coord: a normalized meshgrid
+
                 label = self.label_mapping(sample.shape[1:], target, bboxes)
                 sample_total = np.expand_dims(sample, axis=0)
                 coord_total = np.expand_dims(coord, axis=0)

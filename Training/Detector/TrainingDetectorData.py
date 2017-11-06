@@ -183,9 +183,6 @@ class TrainingDetectorData(DataSet):
             self.index += 1
 
         if len(self.sample_pool) >= batch_size:
-            np.random.shuffle(self.sample_pool)
-            np.random.shuffle(self.label_pool)
-            np.random.shuffle(self.coord_pool)
             samples = np.copy(self.sample_pool[0:batch_size])
             labels_out = np.copy(self.label_pool[0:batch_size])
             coords_out = np.copy(self.coord_pool[0:batch_size])

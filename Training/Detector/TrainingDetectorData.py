@@ -200,7 +200,7 @@ class TrainingDetectorData(DataSet):
             return samples, labels_out, coords_out
 
     def hasNextBatch(self):
-        return self.index < self.length or self.sample_pool is not None
+        return self.index < self.length or (self.sample_pool is not None and len(self.sample_pool) > 0)
 
     def reset(self):
         self.index = 0

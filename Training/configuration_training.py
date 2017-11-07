@@ -1,5 +1,6 @@
 from easydict import EasyDict as edict
 from Training.constants import DATA_BASE_DIR, SYS_DIR, KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_TRAIN_DATA, LUNA_VALIDATE_DATA
+#from Training.constants_mj import DATA_BASE_DIR, SYS_DIR, KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_TRAIN_DATA, LUNA_VALIDATE_DATA
 
 __C = edict()
 cfg = __C

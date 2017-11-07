@@ -154,7 +154,6 @@ class LabelMapping(object):
         output_size = []
         for i in range(3):
             output_size.append(int(input_size[i] / stride))
-
         label = np.zeros(output_size + [len(anchors), 5], np.float32)
         offset = ((stride.astype('float')) - 1) / 2
         oz = np.arange(offset, offset + stride * (output_size[0] - 1) + 1, stride)

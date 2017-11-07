@@ -8,7 +8,7 @@ from Utils.DataSetUtils import Crop, LabelMapping, DetectorDataAugmentRotate, De
 
 
 class TrainingDetectorData(DataSet):
-    def __init__(self, data_dir, split_path, config, phase='train', split_comber=None):
+    def __init__(self, data_dir, split_path, config, phase='train', split_comber=None, shuffle=True):
         assert (phase == 'train' or phase == 'val' or phase == 'test')
         self.phase = phase
         self.max_stride = config['max_stride']
@@ -64,6 +64,13 @@ class TrainingDetectorData(DataSet):
         self.label_pool = None
         self.coord_pool = None
 
+
+        self.shuffle = shuffle
+        self.shuffled_idx = []
+        if self.shuffle:
+            self.shuffled_idx = np.arange(self.length)
+            np.random.shuffle(self.shuffled_idx)
+
     def __getitem__(self, idx, split=None):
         t = time.time()
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
@@ -94,7 +101,9 @@ class TrainingDetectorData(DataSet):
                 ## bboxes: dito
                 ## coord: a normalized meshgrid
 
+                # The step is confusing
                 label = self.label_mapping(sample.shape[1:], target, bboxes)
+
                 sample_total = np.expand_dims(sample, axis=0)
                 coord_total = np.expand_dims(coord, axis=0)
                 label_total = np.expand_dims(label, axis=0)
@@ -180,7 +189,10 @@ class TrainingDetectorData(DataSet):
 
         while (self.sample_pool is None or len(self.sample_pool) < batch_size) and self.index < self.length:
 
-            sample, label, coord = self.__getitem__(self.index)
+            if self.shuffle:
+                sample, label, coord = self.__getitem__(self.shuffled_idx[self.index])
+            else:
+                sample, label, coord = self.__getitem__(self.index)
             self.index += 1
             if self.sample_pool is None:
                 self.sample_pool = np.copy(sample)
@@ -230,14 +242,18 @@ if __name__ == "__main__":
                                     phase='train')
 
     data, labels, coords = data_set.__getitem__(0)
-    print(data.shape)
-    print(labels.shape)
-    print(coords.shape)
-    """
-    batch_data, batch_labels, batch_coord = data_set.getNextBatch(500)
-    print(batch_labels.shape)
-    print(batch_data.shape)
-    print(batch_coord.shape)
+    #print(data.shape)
+    #print(labels.shape)
+    #print(coords.shape)
 
-    print(data_set.hasNextBatch())
-    """
+    batch_cnt = 0
+    while data_set.hasNextBatch():
+        batch_data, batch_labels, batch_coord = data_set.getNextBatch(10)
+        print('Batch %d' % batch_cnt)
+        batch_cnt += 1
+        print(batch_labels.shape)
+        print(batch_data.shape)
+        print(batch_coord.shape)
+
+    #print(data_set.hasNextBatch())
+

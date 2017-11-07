@@ -181,7 +181,7 @@ class DetectorTrainer(object):
         global_step = tf.Variable(0, trainable=False)
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
-                                        self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.1, staircase=True)
+                                        self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.7, staircase=True)
 
         self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
             learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
@@ -402,5 +402,5 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        #instance.train(sess, continue_training=False)
-        instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)
+        instance.train(sess, continue_training=False)
+        #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)

@@ -22,7 +22,7 @@ config['sizelim3'] = 40
 config['aug_scale'] = True
 config['r_rand_crop'] = 0.3
 config['pad_value'] = 170
-config['augtype'] = {'flip':False,'swap':False,'scale':True,'rotate':True}
+config['augtype'] = {'flip':False,'swap':False,'scale':True,'rotate':False}
 config['blacklist'] = []
 
 class DecetorNet(object):

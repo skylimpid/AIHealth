@@ -50,7 +50,7 @@ __C.DIR.train_split_data_path = DATA_BASE_DIR + "train_split/"
 
 # Define the files which contains the train/split ids for detector net
 #__C.DIR.detector_net_train_data_path = DATA_BASE_DIR + "full.npy"
-__C.DIR.detector_net_train_data_path = __C.DIR.train_split_data_path + KAGGLE_TRAIN_DATA
+__C.DIR.detector_net_train_data_path = __C.DIR.train_split_data_path + "full.npy"
 __C.DIR.detector_net_validate_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
 __C.DIR.detector_net_test_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
 
@@ -68,12 +68,12 @@ __C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifer_interm
 # HyperParameters for Training.
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.1
-__C.TRAIN.LEARNING_RATE_STEP_SIZE = 1000
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 7250
 __C.TRAIN.MOMENTUM = 0.9
 __C.TRAIN.DISPLAY_STEPS = 2
-__C.TRAIN.BATCH_SIZE = 1
-__C.TRAIN.EPOCHS = 500
-__C.TRAIN.SAVE_STEPS = 100
+__C.TRAIN.BATCH_SIZE = 5
+__C.TRAIN.EPOCHS = 200
+__C.TRAIN.SAVE_STEPS = 25
 __C.TRAIN.DATA_SPLIT_RATIO = 0.2
 __C.TRAIN.VALIDATE_EPOCHES = 50
 

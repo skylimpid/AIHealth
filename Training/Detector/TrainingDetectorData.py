@@ -169,6 +169,7 @@ class TrainingDetectorData(DataSet):
         while (self.sample_pool is None or len(self.sample_pool) < batch_size) and self.index < self.length:
 
             sample, label, coord = self.__getitem__(self.index)
+            self.index += 1
             if self.sample_pool is None:
                 self.sample_pool = np.copy(sample)
                 self.label_pool = np.copy(label)
@@ -180,7 +181,7 @@ class TrainingDetectorData(DataSet):
                     self.coord_pool = np.concatenate((self.coord_pool, coord), axis=0)
                 except ValueError:
                     continue
-            self.index += 1
+
 
         if len(self.sample_pool) >= batch_size:
             samples = np.copy(self.sample_pool[0:batch_size])

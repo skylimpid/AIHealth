@@ -229,6 +229,8 @@ class TrainingDetectorData(DataSet):
 
     def reset(self):
         self.index = 0
+        if self.shuffle:
+            np.random.shuffle(self.shuffled_idx)
 
 
 if __name__ == "__main__":

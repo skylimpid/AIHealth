@@ -8,8 +8,9 @@ from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
-from Training.constants import DETECTOR_NET_TENSORBOARD_LOG_DIR
+#from Training.constants import DETECTOR_NET_TENSORBOARD_LOG_DIR
 from Training.constants import DIMEN_X, DIMEN_Y, MARGIN, SIDE_LEN
+from Training.configuration_training import DETECTOR_NET_TENSORBOARD_LOG_DIR
 from Utils.nms_cython import nms, iou
 
 class DetectorTrainer(object):
@@ -183,24 +184,44 @@ class DetectorTrainer(object):
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
                                         self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.7, staircase=True)
 
-        self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
-            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        # self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
+        #     learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        #     self.classify_loss_with_pos_neg_without_hard_mining, global_step=global_step)
+        #
+        # self.classify_loss_without_pos_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
+        #     learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        #     self.classify_loss_without_pos_without_hard_mining, global_step=global_step)
+        #
+        # self.classify_loss_without_neg_optimizer = tf.train.MomentumOptimizer(
+        #     learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        #     self.classify_loss_without_neg, global_step=global_step)
+        #
+        # self.classify_loss_with_pos_neg_with_hard_mining_optimizer = tf.train.MomentumOptimizer(
+        #     learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        #     self.classify_loss_with_pos_neg_with_hard_mining, global_step=global_step)
+        #
+        # self.classify_loss_without_pos_with_hard_mining_optimizer = tf.train.MomentumOptimizer(
+        #     learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        #     self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
+
+        self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
+            learning_rate=lr).minimize(
             self.classify_loss_with_pos_neg_without_hard_mining, global_step=global_step)
 
-        self.classify_loss_without_pos_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
-            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        self.classify_loss_without_pos_without_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
+            learning_rate=lr).minimize(
             self.classify_loss_without_pos_without_hard_mining, global_step=global_step)
 
-        self.classify_loss_without_neg_optimizer = tf.train.MomentumOptimizer(
-            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        self.classify_loss_without_neg_optimizer = tf.train.AdadeltaOptimizer(
+            learning_rate=lr).minimize(
             self.classify_loss_without_neg, global_step=global_step)
 
-        self.classify_loss_with_pos_neg_with_hard_mining_optimizer = tf.train.MomentumOptimizer(
-            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        self.classify_loss_with_pos_neg_with_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
+            learning_rate=lr).minimize(
             self.classify_loss_with_pos_neg_with_hard_mining, global_step=global_step)
 
-        self.classify_loss_without_pos_with_hard_mining_optimizer = tf.train.MomentumOptimizer(
-            learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        self.classify_loss_without_pos_with_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
+            learning_rate=lr).minimize(
             self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
 
     def test(self, sess):

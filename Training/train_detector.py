@@ -138,6 +138,7 @@ class DetectorTrainer(object):
                 batch_step += 1
                 if batch_step % self.cfg.TRAIN.DISPLAY_STEPS == 0:
                     print("Batching step: %d" % batch_step)
+                    print("Loss: %f" % (total_loss/batch_step))
 
                 batch_count += len(batch_labels)
 
@@ -182,7 +183,8 @@ class DetectorTrainer(object):
         global_step = tf.Variable(0, trainable=False)
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
-                                        self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.7, staircase=True)
+                                        self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, self.cfg.TRAIN.LEARNING_RATE_DECAY_RATE,
+                                        staircase=True)
 
         # self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.MomentumOptimizer(
         #     learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(

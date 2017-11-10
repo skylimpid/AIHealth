@@ -137,7 +137,7 @@ class DetectorTrainer(object):
                 total_loss += loss_per_batch
                 batch_step += 1
                 if batch_step % self.cfg.TRAIN.DISPLAY_STEPS == 0:
-                    print("Batching step: %d" % batch_step)
+                    print("Batching step: %d, Learning Rate: %f" % (batch_step, self.lr.eval()))
                     print("Loss: %f" % (total_loss/batch_step))
 
                 batch_count += len(batch_labels)
@@ -182,7 +182,7 @@ class DetectorTrainer(object):
 
         global_step = tf.Variable(0, trainable=False)
 
-        lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
+        self.lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
                                         self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, self.cfg.TRAIN.LEARNING_RATE_DECAY_RATE,
                                         staircase=True)
 
@@ -207,23 +207,23 @@ class DetectorTrainer(object):
         #     self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
 
         self.classify_loss_with_pos_neg_without_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
-            learning_rate=lr).minimize(
+            learning_rate=self.lr).minimize(
             self.classify_loss_with_pos_neg_without_hard_mining, global_step=global_step)
 
         self.classify_loss_without_pos_without_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
-            learning_rate=lr).minimize(
+            learning_rate=self.lr).minimize(
             self.classify_loss_without_pos_without_hard_mining, global_step=global_step)
 
         self.classify_loss_without_neg_optimizer = tf.train.AdadeltaOptimizer(
-            learning_rate=lr).minimize(
+            learning_rate=self.lr).minimize(
             self.classify_loss_without_neg, global_step=global_step)
 
         self.classify_loss_with_pos_neg_with_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
-            learning_rate=lr).minimize(
+            learning_rate=self.lr).minimize(
             self.classify_loss_with_pos_neg_with_hard_mining, global_step=global_step)
 
         self.classify_loss_without_pos_with_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
-            learning_rate=lr).minimize(
+            learning_rate=self.lr).minimize(
             self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
 
     def test(self, sess):

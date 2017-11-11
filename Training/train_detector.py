@@ -215,7 +215,9 @@ class DetectorTrainer(object):
 
         tf.summary.histogram("Predicted bbox", self.out)
         tf.summary.histogram("Feature", self.feat)
-        tf.summary.histogram("Conv1_status", self.conv1)
+
+        # TODO: figure out why we got NAN for conv1
+        #tf.summary.histogram("Conv1_status", self.conv1)
         tf.summary.histogram("ResBlock1_status", self.res_block_1_2)
         tf.summary.histogram("ResBlock2_status", self.res_block_2_2)
         tf.summary.histogram("ResBlock3_status", self.resBlock3_3)

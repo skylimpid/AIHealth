@@ -4,9 +4,6 @@ import time
 import numpy as np
 import shutil
 
-import sys
-sys.path.append("/home/xuan/AIHealth")
-
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
@@ -74,6 +71,7 @@ class DetectorTrainer(object):
         # run in tf debug mode. Needs to launch the program on commandLine
         # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
         # sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
+
         # load previous saved weights if we enable the continue_training
         if continue_training:
             value_list = []

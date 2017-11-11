@@ -4,14 +4,17 @@ import time
 import numpy as np
 import shutil
 
+import sys
+sys.path.append("/home/xuan/AIHealth")
+
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNet import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
-#from Training.constants import DETECTOR_NET_TENSORBOARD_LOG_DIR
 from Training.constants import DIMEN_X, DIMEN_Y, MARGIN, SIDE_LEN
 from Training.configuration_training import DETECTOR_NET_TENSORBOARD_LOG_DIR
 from Utils.nms_cython import nms, iou
+from tensorflow.python import debug as tf_debug
 
 class DetectorTrainer(object):
 
@@ -68,6 +71,9 @@ class DetectorTrainer(object):
         # initialize the global parameters
         sess.run(tf.global_variables_initializer())
 
+        # run in tf debug mode. Needs to launch the program on commandLine
+        # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+        # sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
         # load previous saved weights if we enable the continue_training
         if continue_training:
             value_list = []
@@ -94,43 +100,70 @@ class DetectorTrainer(object):
 
         start_time = time.time()
         tf.get_default_graph().finalize()
+        train_step = 0
         for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
 
             batch_count = 0
             batch_step = 0
             total_loss = 0
             while data_set.hasNextBatch():
+                train_step += 1
                 loss_per_batch = 0
                 batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
                 if self.has_positive_in_label(batch_labels):
                     if self.has_negative_in_label(batch_labels):
                         if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):
-                            _, loss_per_batch = sess.run([self.classify_loss_with_pos_neg_with_hard_mining_optimizer,
-                                                          self.classify_loss_with_pos_neg_with_hard_mining],
-                                                         feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                                                    self.labels: batch_labels})
+                            _, loss_per_batch, _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
+                                self.classify_loss_with_pos_neg_with_hard_mining_optimizer,
+                                self.classify_loss_with_pos_neg_with_hard_mining, self.conv1,
+                                self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,
+                                self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
+                                self.feat, self.out, self.summary_op],
+                                feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                           self.labels: batch_labels})
+                            writer.add_summary(summary_op_batch, train_step)
                         else:
-                            _, loss_per_batch = sess.run([self.classify_loss_with_pos_neg_without_hard_mining_optimizer,
-                                                          self.classify_loss_with_pos_neg_without_hard_mining],
-                                                         feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                                                    self.labels: batch_labels})
+                            _, loss_per_batch, _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
+                                self.classify_loss_with_pos_neg_without_hard_mining_optimizer,
+                                self.classify_loss_with_pos_neg_without_hard_mining, self.conv1,
+                                self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,
+                                self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
+                                self.feat, self.out, self.summary_op],
+                                feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                           self.labels: batch_labels})
+                            writer.add_summary(summary_op_batch, train_step)
                     else:
-                        _, loss_per_batch = sess.run([self.classify_loss_without_neg_optimizer,
-                                                      self.classify_loss_without_neg],
-                                                     feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                                                self.labels: batch_labels})
+                        _, loss_per_batch, _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
+                            self.classify_loss_without_neg_optimizer,
+                            self.classify_loss_without_neg, self.conv1,
+                            self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,
+                            self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
+                            self.feat, self.out, self.summary_op],
+                            feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                       self.labels: batch_labels})
+                        writer.add_summary(summary_op_batch, train_step)
                 else:
                     if self.has_negative_in_label(batch_labels):
                         if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):
-                            _, loss_per_batch = sess.run([self.classify_loss_without_pos_with_hard_mining_optimizer,
-                                                          self.classify_loss_without_pos_with_hard_mining],
-                                                         feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                                                    self.labels: batch_labels})
+                            _, loss_per_batch, _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run(
+                                [self.classify_loss_without_pos_with_hard_mining_optimizer,
+                                 self.classify_loss_without_pos_with_hard_mining, self.conv1,
+                                 self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,
+                                 self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
+                                 self.feat, self.out, self.summary_op],
+                                feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                           self.labels: batch_labels})
+                            writer.add_summary(summary_op_batch, train_step)
                         else:
-                            _, loss_per_batch = sess.run([self.classify_loss_without_pos_without_hard_mining_optimizer,
-                                                          self.classify_loss_without_pos_without_hard_mining],
-                                                         feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                                                    self.labels: batch_labels})
+                            _, loss_per_batch,  _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
+                                self.classify_loss_without_pos_without_hard_mining_optimizer,
+                                self.classify_loss_without_pos_without_hard_mining, self.conv1,
+                                self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,
+                                self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
+                                self.feat, self.out, self.summary_op],
+                                feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                           self.labels: batch_labels})
+                            writer.add_summary(summary_op_batch, train_step)
                     else:
                         print("Can not find any label data from the data-set in this batch. Skip it")
 
@@ -171,6 +204,8 @@ class DetectorTrainer(object):
 
         self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 
+        self.conv1, self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,\
+        self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2, \
         self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord)
 
         [self.classify_loss_with_pos_neg_without_hard_mining,
@@ -179,6 +214,20 @@ class DetectorTrainer(object):
          self.classify_loss_with_pos_neg_with_hard_mining,
          self.classify_loss_without_pos_with_hard_mining] = loss_object.getLoss(self.out, self.labels,
                                                                                 self.cfg.TRAIN.BATCH_SIZE)
+
+        tf.summary.histogram("Predicted bbox", self.out)
+        tf.summary.histogram("Feature", self.feat)
+        tf.summary.histogram("Conv1_status", self.conv1)
+        tf.summary.histogram("ResBlock1_status", self.res_block_1_2)
+        tf.summary.histogram("ResBlock2_status", self.res_block_2_2)
+        tf.summary.histogram("ResBlock3_status", self.resBlock3_3)
+        tf.summary.histogram("ResBlock4_status", self.resBlock4_3)
+        tf.summary.histogram("Up1_comb_status", self.comb3)
+        tf.summary.histogram("ResBlock5_status", self.resBlock5_3)
+        tf.summary.histogram("Up2_comb_status", self.comb2)
+
+        tf.summary.scalar("Loss_batch", self.classify_loss_with_pos_neg_with_hard_mining)
+        tf.summary.scalar("Neg_Loss_batch", self.classify_loss_without_pos_with_hard_mining)
 
         global_step = tf.Variable(0, trainable=False)
 
@@ -225,6 +274,8 @@ class DetectorTrainer(object):
         self.classify_loss_without_pos_with_hard_mining_optimizer = tf.train.AdadeltaOptimizer(
             learning_rate=self.lr).minimize(
             self.classify_loss_without_pos_with_hard_mining, global_step=global_step)
+
+        self.summary_op = tf.summary.merge_all()
 
     def test(self, sess):
         sess.run(tf.global_variables_initializer())
@@ -420,7 +471,6 @@ class DetectorTrainer(object):
 
 
 if __name__ == "__main__":
-
     instance = DetectorTrainer(cfg)
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True

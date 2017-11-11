@@ -57,7 +57,7 @@ class ClassiferNet(object):
         coordsize = coord.get_shape().as_list()
         # print(coordsize)
         coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
-        noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
+        _,_,_,_,_,_,_,_,noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
         with tf.variable_scope('global/classifier_scope'):
             nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))

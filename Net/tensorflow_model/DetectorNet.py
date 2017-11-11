@@ -84,13 +84,14 @@ class DecetorNet(object):
         with tf.variable_scope('global/detector_scope'):
             # construct convBlock
             with tf.variable_scope('global/detector_scope/convBlock'):
-                conv1 = tf.layers.conv3d(X, 20, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
+                conv1 = tf.layers.conv3d(X, 16, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
                                               data_format=self.DATA_FORMAT,
                                               name="conv1")
-                conv1_nm = self.fused_batch_normalization(conv1, name="conv1_nm")
+                #conv1_nm = self.fused_batch_normalization(conv1, name="conv1_nm")
+                conv1_nm = tf.layers.batch_normalization(conv1, axis=4)
                 conv1_relu = tf.nn.relu(conv1_nm, name="conv1_relu")
 
-                conv2 = tf.layers.conv3d(conv1_relu, 20, kernel_size=(3, 3, 3), strides=(1, 1, 1),
+                conv2 = tf.layers.conv3d(conv1_relu, 16, kernel_size=(3, 3, 3), strides=(1, 1, 1),
                                                padding="same", data_format=self.DATA_FORMAT, name="conv2")
                 conv2_nm = self.fused_batch_normalization(conv2, name="conv2_nm")
                 conv2_relu = tf.nn.relu(conv2_nm, name="conv2_relu")
@@ -100,7 +101,7 @@ class DecetorNet(object):
                                                    name="maxpool1")
             # construct resBlock1
             with tf.variable_scope('global/detector_scope/resBlock1'):
-                res_block_1_1 = self.build_resblock(maxpool1, 20, 32, name="resBlock1-1")
+                res_block_1_1 = self.build_resblock(maxpool1, 16, 32, name="resBlock1-1")
                 res_block_1_2 = self.build_resblock(res_block_1_1, 32, 32, name="resBlock1-2")
                 maxpool2 = tf.layers.max_pooling3d(res_block_1_2, pool_size=(2, 2, 2), strides=(2, 2, 2),
                                                    padding="valid", data_format=self.DATA_FORMAT,
@@ -171,7 +172,7 @@ class DecetorNet(object):
                 out = tf.transpose(out, perm=(0, 2, 1))
                 out = tf.reshape(out, (-1, size[2], size[3], size[4], len(config['anchors']), 5))
                 #print(out.shape)
-            return feat, out
+            return conv1, res_block_1_2, res_block_2_2, resBlock3_3, resBlock4_3, comb3, resBlock5_3, comb2, feat, out
 
 
 def get_model():

@@ -82,6 +82,9 @@ class DetectorTrainer(object):
         average_loss_holder = tf.placeholder(tf.float32)
         average_loss_tensor = tf.summary.scalar("average_loss", average_loss_holder)
 
+        cur_loss_holder = tf.placeholder(tf.float32)
+        cur_loss_tensor = tf.summary.scalar("cur_loss", cur_loss_holder)
+
         writer = tf.summary.FileWriter(DETECTOR_NET_TENSORBOARD_LOG_DIR)
         writer.add_graph(sess.graph)
 
@@ -104,6 +107,9 @@ class DetectorTrainer(object):
             batch_count = 0
             batch_step = 0
             total_loss = 0
+            latest_total_loss = 0
+            latest_avg_loss = 0
+            latest_count = 0
             while data_set.hasNextBatch():
                 train_step += 1
                 loss_per_batch = 0
@@ -165,19 +171,28 @@ class DetectorTrainer(object):
                     else:
                         print("Can not find any label data from the data-set in this batch. Skip it")
 
+                latest_total_loss += loss_per_batch
+                latest_count += 1
                 total_loss += loss_per_batch
                 batch_step += 1
                 if batch_step % self.cfg.TRAIN.DISPLAY_STEPS == 0:
-                    print("Batching step: %d, Learning Rate: %f" % (batch_step, self.lr.eval()))
-                    print("Loss: %f" % (total_loss/batch_step))
+                    latest_avg_loss = latest_total_loss / latest_count
+                    print("Step: %d, Avg Loss: %f, Cur Loss: %f" % (batch_step, (total_loss/batch_step), latest_avg_loss))
+                    latest_total_loss = 0
+                    latest_count = 0
 
                 batch_count += len(batch_labels)
 
-            print("Epoch %d finished on %d batches." % (epoch, batch_count))
+            print("Epoch %d finished on %d batches in avg loss %f and cur loss %f." % (epoch, batch_count, total_loss/batch_step, latest_avg_loss))
 
             feed = {average_loss_holder: total_loss/batch_step}
             average_loss_str = sess.run(average_loss_tensor, feed_dict=feed)
             writer.add_summary(average_loss_str, epoch)
+
+            feed1 = {cur_loss_holder: latest_avg_loss}
+            cur_loss_str = sess.run(cur_loss_tensor, feed_dict=feed1)
+            writer.add_summary(cur_loss_str, epoch)
+
             data_set.reset()
             if epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
                 filename = self.cfg.DIR.detector_net_saver_file_prefix + '{:d}'.format(epoch)
@@ -217,7 +232,7 @@ class DetectorTrainer(object):
         tf.summary.histogram("Feature", self.feat)
 
         # TODO: figure out why we got NAN for conv1
-        #tf.summary.histogram("Conv1_status", self.conv1)
+        tf.summary.histogram("Conv1_status", self.conv1)
         tf.summary.histogram("ResBlock1_status", self.res_block_1_2)
         tf.summary.histogram("ResBlock2_status", self.res_block_2_2)
         tf.summary.histogram("ResBlock3_status", self.resBlock3_3)

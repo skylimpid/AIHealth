@@ -93,7 +93,7 @@ class TrainingDetectorData(DataSet):
             if not isRandomImg:
                 bbox = self.bboxes[idx]
                 filename = self.filenames[int(bbox[0])]
-                print(filename)
+                # print(filename)
                 imgs = np.load(filename)
                 ## bboxes from the same patient
                 bboxes = self.sample_bboxes[int(bbox[0])]

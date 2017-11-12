@@ -36,13 +36,10 @@ class DecetorNet(object):
         self.img_channel = img_channel
 
     def fused_batch_normalization(self, input_tensor, name):
-        original_shape = input_tensor.get_shape().as_list()
-        before_bn = tf.reshape(input_tensor, shape=(-1, original_shape[1], original_shape[2]* original_shape[3],
-                                                    original_shape[4]))
-        bn = tf.layers.batch_normalization(before_bn, axis=3, momentum=0.1, epsilon=1e-05, fused=True, name=name)
-        after_bn = tf.reshape(bn, shape=(-1, original_shape[1], original_shape[2], original_shape[3],
-                                         original_shape[4]))
-        return after_bn
+
+        # TODO: fused=True can improve this function performance but unfortunately TF can only support axis=3 if fused=True
+        return tf.layers.batch_normalization(input_tensor, axis=4, momentum=0.1, epsilon=1e-05, fused=False, name=name)
+
 
     def build_resblock(self, input, cin, cout, name):
         assert(((cout >= cin) and (cout-cin)%2 == 0) or (cin > cout))
@@ -54,20 +51,18 @@ class DecetorNet(object):
                                      padding="same", data_format=self.DATA_FORMAT,
                                      name=name+"_conv2")
         res_conv2_bn = self.fused_batch_normalization(res_conv2, name=name+"_conv2_bn")
-        # short cut
-        if cin < cout:
-            pad = int((cout-cin)/2)
-            res_shortcut = tf.pad(input, tf.constant([[0, 0], [0, 0], [0, 0], [0, 0], [pad, pad]]),
-                                  "CONSTANT", name=name+"_shortcut")
-        elif cin == cout :
-            res_shortcut = input
-        else:
+
+        # RestNet shortcut
+        res_shortcut = input
+        if cin != cout:
             res_shortcut = tf.layers.conv3d(input, cout, kernel_size=(1, 1, 1), strides=(1, 1, 1), padding="same",
                                             data_format=self.DATA_FORMAT,
                                             name=name+"_shortcut")
             res_shortcut = self.fused_batch_normalization(res_shortcut, name=name+"_shortcut_bn")
+
         res_op = tf.add(res_conv2_bn, res_shortcut, name=name+"_op")
         res_op_relu = tf.nn.relu(res_op, name="res_op_relu")
+
         return res_op_relu
 
 
@@ -166,12 +161,9 @@ class DecetorNet(object):
                                             strides=(1, 1, 1), padding="valid", data_format=self.DATA_FORMAT)
 
                 feat = tf.transpose(feat, perm=[0, 4, 1, 2, 3])
-                output_2 = tf.transpose(output_2, perm=[0, 4, 1, 2, 3])
                 size = output_2.get_shape().as_list()
-                out = tf.reshape(output_2, (-1, size[1], size[2] * size[3] * size[4]))
-                out = tf.transpose(out, perm=(0, 2, 1))
-                out = tf.reshape(out, (-1, size[2], size[3], size[4], len(config['anchors']), 5))
-                #print(out.shape)
+                out = tf.reshape(output_2, (-1, size[1], size[2], size[3], len(config['anchors']), 5))
+
             return conv1, res_block_1_2, res_block_2_2, resBlock3_3, resBlock4_3, comb3, resBlock5_3, comb2, feat, out
 
 

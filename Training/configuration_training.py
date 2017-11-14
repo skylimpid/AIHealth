@@ -69,11 +69,12 @@ __C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifer_interm
 
 
 # HyperParameters for Training.
+# Refer to: https://towardsdatascience.com/learning-rate-schedules-and-adaptive-learning-rate-methods-for-deep-learning-2c8f433990d1
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.1
 __C.TRAIN.LEARNING_RATE_STEP_SIZE = 7250
-__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
-__C.TRAIN.MOMENTUM = 0.9
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.01
+__C.TRAIN.MOMENTUM = 0.8
 __C.TRAIN.DISPLAY_STEPS = 10
 __C.TRAIN.BATCH_SIZE = 5
 __C.TRAIN.EPOCHS = 100

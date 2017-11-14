@@ -35,10 +35,10 @@ class DecetorNet(object):
         self.img_depth = img_depth
         self.img_channel = img_channel
 
-    def fused_batch_normalization(self, input_tensor, name):
+    def fused_batch_normalization(self, input, name):
 
         # TODO: fused=True can improve this function performance but unfortunately TF can only support axis=3 if fused=True
-        return tf.layers.batch_normalization(input_tensor, axis=4, momentum=0.1, epsilon=1e-05, fused=False, name=name)
+        return tf.layers.batch_normalization(input, axis=4, momentum=0.1, epsilon=1e-05, fused=False, name=name)
 
 
     def build_resblock(self, input, cin, cout, name):
@@ -157,12 +157,10 @@ class DecetorNet(object):
                 output_0 = tf.layers.conv3d(dropout, 64, kernel_size=(1, 1, 1), strides=(1, 1, 1), padding="valid",
                                             data_format=self.DATA_FORMAT)
                 output_relu = tf.nn.relu(output_0)
-                output_2 = tf.layers.conv3d(output_relu, 5 * len(config['anchors']), kernel_size=(1, 1, 1),
+                out = tf.layers.conv3d(output_relu, 5 * len(config['anchors']), kernel_size=(1, 1, 1),
                                             strides=(1, 1, 1), padding="valid", data_format=self.DATA_FORMAT)
 
                 feat = tf.transpose(feat, perm=[0, 4, 1, 2, 3])
-                size = output_2.get_shape().as_list()
-                out = tf.reshape(output_2, (-1, size[1], size[2], size[3], len(config['anchors']), 5))
 
             return conv1, res_block_1_2, res_block_2_2, resBlock3_3, resBlock4_3, comb3, resBlock5_3, comb2, feat, out
 

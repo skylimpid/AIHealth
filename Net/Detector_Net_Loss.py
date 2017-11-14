@@ -21,7 +21,7 @@ class DetectorNetLoss():
 
         neg_idcs = labels[:, 0] < -0.5
 
-        neg_output=tf.boolean_mask(output[:,0], neg_idcs)
+        neg_output=tf.boolean_mask(output[:, 0], neg_idcs)
         neg_labels=tf.boolean_mask(labels[:, 0], neg_idcs)
 
         #if self.num_hard > 0 and train:

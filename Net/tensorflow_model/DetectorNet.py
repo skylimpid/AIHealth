@@ -172,6 +172,29 @@ def get_model():
     return config, net, loss, get_pbb
 
 
+# exercise for tf conv3d data shapes
+def test_shapes():
+
+    X = tf.random_uniform(shape=[100, 96, 96, 96, 1])
+    print("X:", X.get_shape())
+    conv1 = tf.layers.conv3d(X, 16, kernel_size=(20, 20, 20), strides=(2, 2, 2), padding="same")
+    print("conv1:", conv1.get_shape())
+    conv1_nm = tf.layers.batch_normalization(conv1, axis=4)
+    print("conv1_nm:", conv1_nm.get_shape())
+    conv1_relu = tf.nn.relu(conv1_nm)
+    print("conv1_relu:", conv1_relu.get_shape())
+    conv2 = tf.layers.conv3d(conv1_relu, 8, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same")
+    print("conv2:",  conv2.get_shape())
+    conv2_relu = tf.nn.relu(conv2)
+    print("conv2_relu:",  conv2_relu.get_shape())
+
+    maxpool = tf.layers.max_pooling3d(conv2_relu, pool_size=(2, 2, 2), strides=(1, 1, 1), padding="same")
+    print("maxpool:", maxpool.get_shape())
+
+    logits = tf.layers.dense(inputs=maxpool, units=108)
+    print("logits:", logits.get_shape())
+
+
 if __name__ == '__main__':
     # if we specify a number instead of None, it works
     #X = tf.placeholder(tf.float32, shape=(100, 1, 128, 128, 128))
@@ -184,3 +207,5 @@ if __name__ == '__main__':
     net.getDetectorNet(X, coord)
 
     print (get_model())
+    #test_shapes()
+

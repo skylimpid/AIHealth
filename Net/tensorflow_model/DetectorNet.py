@@ -172,7 +172,8 @@ def get_model():
     return config, net, loss, get_pbb
 
 
-# exercise for tf conv3d data shapes
+# explain for tf conv3d data shapes and see the descriptions at wiki below:
+# https://github.com/skylimpid/AIHealth/wiki/TF-Links
 def test_shapes():
 
     X = tf.random_uniform(shape=[100, 96, 96, 96, 1])

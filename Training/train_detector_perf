@@ -1,0 +1,75 @@
+############################################################
+# Please add loss and accuracy records here at each checkin if the tuning related changes are made.
+# Please do not git push if the change makes worse in optimization or record here for reference purpose
+#
+# anaconda3/bin/python AIHealth/Training/train_detector.py
+############################################################
+
+###
+dropout = tf.layers.dropout(feat, rate=0.4, name="dropout_feature")  
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.01
+__C.TRAIN.BATCH_SIZE =  5
+
+
+Step: 10, Avg Loss: 0.793708, Cur Loss: 0.793708
+Epoch 1 finished on 1448 batches in avg loss 0.770019 and cur loss 0.764823.
+Epoch 2 finished on 1448 batches in avg loss 0.756032 and cur loss 0.752899.
+Epoch 3 finished on 1448 batches in avg loss 0.742929 and cur loss 0.733387.
+
+
+Epoch 9 finished on 1448 batches in avg loss 0.610775 and cur loss 0.572691.
+Epoch 10 finished on 1448 batches in avg loss 0.603525 and cur loss 0.609269.
+Epoch 11 finished on 1448 batches in avg loss 0.593453 and cur loss 0.591157.
+
+
+###
+dropout = tf.layers.dropout(feat, rate=0.4, name="dropout_feature")
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.9
+__C.TRAIN.BATCH_SIZE = 10
+
+Step: 10, Avg Loss: 0.787539, Cur Loss: 0.787539
+Epoch 1 finished on 1448 batches in avg loss 0.773786 and cur loss 0.770592.
+Epoch 2 finished on 1448 batches in avg loss 0.758528 and cur loss 0.758167.
+Epoch 3 finished on 1448 batches in avg loss 0.749668 and cur loss 0.744524.
+
+Epoch 5 finished on 1448 batches in avg loss 0.734460 and cur loss 0.733835.
+
+Epoch 8 finished on 1448 batches in avg loss 0.673954 and cur loss 0.659271.
+Epoch 9 finished on 1448 batches in avg loss 0.651847 and cur loss 0.646407.
+Epoch 10 finished on 1448 batches in avg loss 0.632067 and cur loss 0.624173.
+Epoch 11 finished on 1448 batches in avg loss 0.620530 and cur loss 0.632186.
+
+
+###
+dropout = tf.layers.dropout(feat, rate=0.4, name="dropout_feature")
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.01
+__C.TRAIN.BATCH_SIZE = 10
+
+Step: 10, Avg Loss: 0.787745, Cur Loss: 0.787745
+Epoch 1 finished on 1448 batches in avg loss 0.775415 and cur loss 0.768271.
+Epoch 2 finished on 1448 batches in avg loss 0.763157 and cur loss 0.755870.
+Epoch 3 finished on 1448 batches in avg loss 0.749217 and cur loss 0.749444.
+
+
+###
+Remove all loss functions except classify_loss_with_pos_neg_with_hard_mining
+dropout = tf.layers.dropout(feat, rate=0.4, name="dropout_feature")
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.01
+__C.TRAIN.BATCH_SIZE = 10
+
+Epoch 1 finished on 1448 batches in avg loss 0.773969 and cur loss 0.762390.
+Epoch 2 finished on 1448 batches in avg loss 0.756873 and cur loss 0.749570.
+
+Epoch 8 finished on 1448 batches in avg loss 0.665592 and cur loss 0.651356.
+Epoch 9 finished on 1448 batches in avg loss 0.638862 and cur loss 0.649554.
+Epoch 10 finished on 1448 batches in avg loss 0.618648 and cur loss 0.629125.
+
+Epoch 19 finished on 1448 batches in avg loss 0.568994 and cur loss 0.561298.
+Epoch 20 finished on 1448 batches in avg loss 0.563642 and cur loss 0.560136.
+
+Epoch 30 finished on 1448 batches in avg loss 0.548439 and cur loss 0.551291.
+Epoch 31 finished on 1448 batches in avg loss 0.544557 and cur loss 0.540299.
+
+Epoch 37 finished on 1447 batches in avg loss 0.537473 and cur loss 0.525422.
+Epoch 38 finished on 1448 batches in avg loss 0.537316 and cur loss 0.530574.
+Epoch 39 finished on 1448 batches in avg loss 0.533906 and cur loss 0.532312.

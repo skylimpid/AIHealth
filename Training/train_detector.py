@@ -22,7 +22,8 @@ class DetectorTrainer(object):
 
         self.cfg = cfg
 
-        self.build_model()
+        #self.build_model()
+        self.build_model_2()
 
         self.validate_average_iou_holder = tf.placeholder(tf.float32)
         self.validate_average_iou_tensor = tf.summary.scalar("validate_average_iou", self.validate_average_iou_holder)
@@ -59,6 +60,150 @@ class DetectorTrainer(object):
             return True
 
         return False
+
+
+
+    def train_2(self, sess, continue_training=False, clear=True, enable_validate=False):
+        if clear:
+            if os.path.exists(DETECTOR_NET_TENSORBOARD_LOG_DIR):
+                shutil.rmtree(DETECTOR_NET_TENSORBOARD_LOG_DIR)
+
+        # initialize the global parameters
+        sess.run(tf.global_variables_initializer())
+
+        # run in tf debug mode. Needs to launch the program on commandLine
+        # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+        # sess.add_tensor_filter("has_inf_or_nan", tf_debug.has_inf_or_nan)
+
+        # load previous saved weights if we enable the continue_training
+        if continue_training:
+            value_list = []
+            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+            restore = tf.train.Saver(value_list)
+            restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
+
+        average_loss_holder = tf.placeholder(tf.float32)
+        average_loss_tensor = tf.summary.scalar("average_loss", average_loss_holder)
+
+        cur_loss_holder = tf.placeholder(tf.float32)
+        cur_loss_tensor = tf.summary.scalar("cur_loss", cur_loss_holder)
+
+        writer = tf.summary.FileWriter(DETECTOR_NET_TENSORBOARD_LOG_DIR)
+        writer.add_graph(sess.graph)
+
+        saver = tf.train.Saver(max_to_keep=10)
+
+        if not os.path.exists(cfg.DIR.detector_net_saver_dir):
+            os.makedirs(cfg.DIR.detector_net_saver_dir)
+
+        # Get the training data
+        data_set = TrainingDetectorData(self.cfg.DIR.preprocess_result_path,
+                                        self.cfg.DIR.detector_net_train_data_path,
+                                        self.net_config,
+                                        phase='train')
+
+        start_time = time.time()
+        tf.get_default_graph().finalize()
+        train_step = 0
+
+        batch_classify_loss = 0
+
+        for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
+
+            batch_count = 0
+            sample_count = 0
+            accum_classify_loss_in_epoch = 0
+            accum_reg_loss_1_in_epoch = 0
+            accum_reg_loss_2_in_epoch = 0
+            accum_reg_loss_3_in_epoch = 0
+            accum_reg_loss_4_in_epoch = 0
+
+            window_batch_count = 0
+            accum_window_classify_loss = 0
+            while data_set.hasNextBatch():
+                train_step += 1
+                batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
+
+                _,_,_,_,_,batch_classify_loss,batch_reg_loss_1,batch_reg_loss_2,batch_reg_loss_3,batch_reg_loss_4,\
+                _,_,_,_,_,_,_,_,_,_,summary_op_batch = sess.run([self.classify_loss_optimizer,
+                          self.reg_loss_1_optimizer,
+                          self.reg_loss_2_optimizer,
+                          self.reg_loss_3_optimizer,
+                          self.reg_loss_4_optimizer,
+                          self.classify_loss,
+                          self.reg_loss_1,
+                          self.reg_loss_2,
+                          self.reg_loss_3,
+                          self.reg_loss_4,
+                          self.conv1,
+                          self.res_block_1_2,
+                          self.res_block_2_2,
+                          self.resBlock3_3,
+                          self.resBlock4_3,
+                          self.comb3,
+                          self.resBlock5_3,
+                          self.comb2,
+                          self.feat,
+                          self.out,
+                          self.summary_op
+                          ],
+                         feed_dict={self.X: batch_data,
+                                    self.coord: batch_coord,
+                                    self.labels: batch_labels})
+
+                writer.add_summary(summary_op_batch, train_step)
+
+                accum_classify_loss_in_epoch += batch_classify_loss
+                accum_reg_loss_1_in_epoch += batch_reg_loss_1
+                accum_reg_loss_2_in_epoch += batch_reg_loss_2
+                accum_reg_loss_3_in_epoch += batch_reg_loss_3
+                accum_reg_loss_4_in_epoch += batch_reg_loss_4
+
+                accum_window_classify_loss += batch_classify_loss
+
+                window_batch_count += 1
+                batch_count += 1
+
+                if batch_count % self.cfg.TRAIN.DISPLAY_STEPS == 0:
+                    cur_avg_classify_loss = accum_classify_loss_in_epoch / batch_count
+                    window_classify_loss = accum_window_classify_loss / window_batch_count
+                    print("Batch: %d, Avg Classify Loss: %f" % (batch_count, cur_avg_classify_loss))
+                    print("Batch: %d, Window Classify Loss: %f" % (batch_count, window_classify_loss))
+                    accum_window_classify_loss = 0
+                    window_batch_count = 0
+
+                sample_count += len(batch_labels)
+
+            window_classify_loss = accum_window_classify_loss/window_batch_count if window_batch_count != 0 else batch_classify_loss
+            print("Epoch %d finished on %d batches in avg loss %f." % (epoch, batch_count,
+                                                                       accum_classify_loss_in_epoch/batch_count,
+                                                                        ))
+
+            feed = {average_loss_holder: accum_classify_loss_in_epoch/batch_count}
+            average_loss_str = sess.run(average_loss_tensor, feed_dict=feed)
+            writer.add_summary(average_loss_str, epoch)
+
+            feed1 = {cur_loss_holder: window_classify_loss}
+            cur_loss_str = sess.run(cur_loss_tensor, feed_dict=feed1)
+            writer.add_summary(cur_loss_str, epoch)
+
+            data_set.reset()
+            if epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
+                filename = self.cfg.DIR.detector_net_saver_file_prefix + '{:d}'.format(epoch)
+                filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, filename)
+                saver.save(sess, filename, global_step=epoch)
+
+            if epoch % self.cfg.TRAIN.VALIDATE_EPOCHES == 0 and enable_validate:
+                self.validate(sess=sess, writer=writer, epoch=epoch)
+
+        filename = os.path.join(self.cfg.DIR.detector_net_saver_dir, (self.cfg.DIR.detector_net_saver_file_prefix
+                                                                      + 'final'))
+        saver.save(sess, filename)
+        end_time = time.time()
+
+        print("The total time used in training: {}".format(end_time-start_time))
+
+
 
     def train(self, sess, continue_training=False, clear=True, enable_validate=False):
         if clear:
@@ -207,6 +352,66 @@ class DetectorTrainer(object):
         end_time = time.time()
 
         print("The total time used in training: {}".format(end_time-start_time))
+
+
+    def build_model_2(self):
+
+        self.X = tf.placeholder(tf.float32, shape=[None, 1, DIMEN_X, DIMEN_X, DIMEN_X])
+        self.coord = tf.placeholder(tf.float32, shape=[None, 3, DIMEN_Y, DIMEN_Y, DIMEN_Y])
+        self.labels = tf.placeholder(tf.float32, shape=[None, DIMEN_Y, DIMEN_Y, DIMEN_Y, 3, 5])
+
+        self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
+
+        self.conv1, self.res_block_1_2, self.res_block_2_2, self.resBlock3_3, \
+        self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2, \
+        self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord)
+
+        [self.reg_loss_1,
+         self.reg_loss_2,
+         self.reg_loss_3,
+         self.reg_loss_4,
+         self.classify_loss] = loss_object.getLoss(self.out, self.labels)
+
+        tf.summary.histogram("Predicted bbox", self.out)
+        tf.summary.histogram("Feature", self.feat)
+
+        # TODO: figure out why we got NAN for conv1
+        tf.summary.histogram("Conv1_status", self.conv1)
+        tf.summary.histogram("ResBlock1_status", self.res_block_1_2)
+        tf.summary.histogram("ResBlock2_status", self.res_block_2_2)
+        tf.summary.histogram("ResBlock3_status", self.resBlock3_3)
+        tf.summary.histogram("ResBlock4_status", self.resBlock4_3)
+        tf.summary.histogram("Up1_comb_status", self.comb3)
+        tf.summary.histogram("ResBlock5_status", self.resBlock5_3)
+        tf.summary.histogram("Up2_comb_status", self.comb2)
+
+        tf.summary.scalar("Reg Loss 1", self.reg_loss_1)
+        tf.summary.scalar("Reg Loss 2", self.reg_loss_2)
+        tf.summary.scalar("Reg Loss 3", self.reg_loss_3)
+        tf.summary.scalar("Reg Loss 4", self.reg_loss_4)
+        tf.summary.scalar("Classify Loss", self.classify_loss)
+
+        global_step = tf.Variable(0, trainable=False)
+
+        self.lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
+                                             self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE,
+                                             self.cfg.TRAIN.LEARNING_RATE_DECAY_RATE,
+                                             staircase=True)
+
+        self.reg_loss_1_optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.lr).minimize(self.reg_loss_1,
+                                                                                               global_step=global_step)
+        self.reg_loss_2_optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.lr).minimize(self.reg_loss_2,
+                                                                                               global_step=global_step)
+        self.reg_loss_3_optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.lr).minimize(self.reg_loss_3,
+                                                                                               global_step=global_step)
+        self.reg_loss_4_optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.lr).minimize(self.reg_loss_4,
+                                                                                               global_step=global_step)
+        self.classify_loss_optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.lr).minimize(self.classify_loss,
+                                                                                               global_step=global_step)
+
+        self.summary_op = tf.summary.merge_all()
+
+
 
 
     def build_model(self):
@@ -490,5 +695,5 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        instance.train(sess, continue_training=False)
+        instance.train_2(sess, continue_training=False)
         #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)

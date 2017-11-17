@@ -1,2 +1,2 @@
-model_checkpoint_path: "/media/luhui/E/AIDev/AIHealth/Trained_Models/DetectorNetWeight/detector_model_weights_iter_25-25"
-all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/DetectorNetWeight/detector_model_weights_iter_25-25"
+model_checkpoint_path: "/home/jun/Desktop/workspace/erudite/AIHealth//Trained_Models/DetectorNetWeight/detector_model_weights_iter_25-25"
+all_model_checkpoint_paths: "/home/jun/Desktop/workspace/erudite/AIHealth//Trained_Models/DetectorNetWeight/detector_model_weights_iter_25-25"

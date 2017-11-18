@@ -167,8 +167,9 @@ class DetectorTrainer(object):
                 if batch_count % self.cfg.TRAIN.DISPLAY_STEPS == 0:
                     cur_avg_classify_loss = accum_classify_loss_in_epoch / batch_count
                     window_classify_loss = accum_window_classify_loss / window_batch_count
-                    print("Batch: %d, Avg Classify Loss: %f" % (batch_count, cur_avg_classify_loss))
-                    print("Batch: %d, Window Classify Loss: %f" % (batch_count, window_classify_loss))
+                    print("Batch: %d, Avg Classify Loss: %f, Window Classify Loss: %f, Learning Rate: %f" % (batch_count, cur_avg_classify_loss,
+                                                                                                             window_classify_loss,
+                                                                                                             self.lr.eval()))
                     accum_window_classify_loss = 0
                     window_batch_count = 0
 

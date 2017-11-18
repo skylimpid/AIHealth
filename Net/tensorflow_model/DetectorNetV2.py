@@ -29,6 +29,7 @@ config['blacklist'] = []
 class DecetorNetV2(object):
 
     DATA_FORMAT = 'channels_last'
+    activation_op = "swish"
 
     def __init__(self, img_row=DIMEN_X, img_col=DIMEN_X, img_depth=DIMEN_X, img_channel=1):
         self.img_row = img_row
@@ -49,7 +50,7 @@ class DecetorNetV2(object):
         self.layers[conv1_name] = res_conv1
 
         res_conv1_bn = self.fused_batch_normalization(res_conv1, name=name+"_conv1_bn")
-        res_conv1_relu = leaky_relu(res_conv1_bn, name=name+"_conv1_relu")
+        res_conv1_relu = activation(res_conv1_bn, op=self.activation_op)
 
         conv2_name = name + "_conv2"
         res_conv2 = tf.layers.conv3d(res_conv1_relu, cout, kernel_size=(3, 3, 3), strides=(1, 1, 1),
@@ -68,7 +69,7 @@ class DecetorNetV2(object):
             res_shortcut = self.fused_batch_normalization(res_shortcut, name=name+"_shortcut_bn")
 
         res_op = tf.add(res_conv2_bn, res_shortcut, name=name+"_op")
-        res_op_relu = leaky_relu(res_op, name="res_op_relu")
+        res_op_relu = activation(res_op, op=self.activation_op)
 
         return res_op_relu
 
@@ -91,13 +92,13 @@ class DecetorNetV2(object):
                                               name="conv1")
                 self.layers["conv1"] = conv1
                 conv1_nm = self.fused_batch_normalization(conv1, name="conv1_nm")
-                conv1_relu = leaky_relu(conv1_nm, name="conv1_relu")
+                conv1_relu = activation(conv1_nm, op=self.activation_op)
 
                 conv2 = tf.layers.conv3d(conv1_relu, 16, kernel_size=(3, 3, 3), strides=(1, 1, 1),
                                                padding="same", data_format=self.DATA_FORMAT, name="conv2")
                 self.layers["conv2"] = conv2
                 conv2_nm = self.fused_batch_normalization(conv2, name="conv2_nm")
-                conv2_relu = leaky_relu(conv2_nm, name="conv2_relu")
+                conv2_relu = activation(conv2_nm, op=self.activation_op)
 
                 maxpool1 = tf.layers.max_pooling3d(conv2_relu, pool_size=(2, 2, 2), strides=(2, 2, 2),
                                                    padding="valid", data_format=self.DATA_FORMAT,
@@ -137,7 +138,7 @@ class DecetorNetV2(object):
                                                  use_bias=False, data_format=self.DATA_FORMAT,
                                                  name="up1")
                 up1_bn = self.fused_batch_normalization(up1, name="up1_bn")
-                up1_relu = leaky_relu(up1_bn, name="up1_relu")
+                up1_relu = activation(up1_bn, op=self.activation_op)
                 comb3 = tf.concat([up1_relu, resBlock3_3], axis=4, name="comb")
 
             # construct resBlock5
@@ -151,7 +152,7 @@ class DecetorNetV2(object):
                                                      use_bias=False, data_format=self.DATA_FORMAT,
                                                      name="up2")
                 up2_bn = self.fused_batch_normalization(up2, name="up2_bn")
-                up2_relu = leaky_relu(up2_bn, name="up2_relu")
+                up2_relu = activation(up2_bn, op=self.activation_op)
                 comb2 = tf.concat([up2_relu, res_block_2_2, coord], axis=4, name="comb")
 
             # construct resBlock6
@@ -165,7 +166,7 @@ class DecetorNetV2(object):
                 output_0 = tf.layers.conv3d(dropout, 64, kernel_size=(1, 1, 1), strides=(1, 1, 1), padding="valid",
                                             data_format=self.DATA_FORMAT, name="output_conv1")
                 self.layers["output_conv1"] = output_0
-                output_relu = leaky_relu(output_0)
+                output_relu = activation(output_0, op=self.activation_op)
                 out = tf.layers.conv3d(output_relu, 5 * len(config['anchors']), kernel_size=(1, 1, 1),
                                        strides=(1, 1, 1), padding="valid", data_format=self.DATA_FORMAT,
                                        name="output")
@@ -181,6 +182,19 @@ def leaky_relu(x, leak=0.1, name="lrelu"):
         f1 = 0.5 * (1 + leak)
         f2 = 0.5 * (1 - leak)
         return f1 * x + f2 * abs(x)
+
+
+def swish(x, name="swish"):
+    with tf.variable_scope(name):
+        return x*tf.nn.sigmoid(x)
+
+
+def activation(x, leak=0.1, op="relu"):
+    if op == "lrelu":
+        return leaky_relu(x, leak=leak, name=op)
+    elif op == "swish":
+        return swish(x, name=op)
+    return tf.nn.relu(x)
 
 
 def get_model():

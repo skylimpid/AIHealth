@@ -13,7 +13,6 @@ class TrainingClassifierData(DataSet):
 
     def __init__(self, preprocess_result_dir, bboxpath_dir, labelfile, split, config,  phase='train'):
         assert (phase == 'train' or phase == 'val' or phase == 'test')
-
         self.random_sample = config['random_sample']
         self.T = config['T']
         self.topk = config['topk']
@@ -25,8 +24,15 @@ class TrainingClassifierData(DataSet):
         datadir = preprocess_result_dir
         bboxpath = bboxpath_dir
         self.phase = phase
-        self.candidate_box = []
+        self.candidate_box = {}
+        for f in os.listdir(cfg.DIR.classifier_net_intermediate_candidate_box):
+            name = f.split('_')[0]
+            self.candidate_box[name] = os.path.join(cfg.DIR.classifier_net_intermediate_candidate_box, f)
+
         self.pbb_label = []
+        for f in os.listdir(cfg.DIR.classifier_net_intermediate_pbb_label):
+            name = f.split('_')[0]
+            self.candidate_box[name] = os.path.join(cfg.DIR.classifier_net_intermediate_pbb_label, f)
 
         idcs = np.load(split)
 
@@ -40,36 +46,6 @@ class TrainingClassifierData(DataSet):
         idcs = [f.split('-')[0] for f in idcs]
         # print (idcs)
 
-        load_candidate_box = False
-        load_pbb_label = False
-        if os.path.exists(cfg.DIR.classifier_net_intermediate_candidate_box):
-            self.candidate_box = np.load(cfg.DIR.classifier_net_intermediate_candidate_box).tolist()
-            load_candidate_box = True
-        if os.path.exists(cfg.DIR.classifier_net_intermediate_pbb_label):
-            self.pbb_label = np.load(cfg.DIR.classifier_net_intermediate_pbb_label).tolist()
-            load_pbb_label = True
-
-        if not (load_candidate_box and load_pbb_label):
-            for idx in idcs:
-                print(idx)
-                pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
-                pbb = pbb[pbb[:, 0] > config['conf_th']]
-                pbb = nms(pbb, config['nms_th'], self.topk*100)
-                lbb = np.load(os.path.join(bboxpath, idx + '_lbb.npy'))
-                pbb_label = []
-                for p in pbb:
-                    isnod = False
-                    for l in lbb:
-                        score = iou(p[1:5], l)
-                        if score > config['detect_th']:
-                            isnod = True
-                            break
-                    pbb_label.append(isnod)
-                #             if idx.startswith()
-                if not load_candidate_box:
-                    self.candidate_box.append(pbb)
-                if not load_pbb_label:
-                    self.pbb_label.append(np.array(pbb_label))
         self.crop = simpleCrop(config, phase)
         self.index = 0
         self.length = self.__len__()
@@ -77,13 +53,13 @@ class TrainingClassifierData(DataSet):
     def __getitem__(self, idx, split=None):
         t = time.time()
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
-
-        pbb = self.candidate_box[idx]
-        pbb_label = self.pbb_label[idx]
+        img = np.load(self.filenames[idx])
+        fileName = self.filenames[idx].split('_')[0]
+        pbb = np.load(self.candidate_box[fileName])
+        pbb_label = np.load(self.pbb_label[fileName])
         conf_list = pbb[:, 0]
         T = self.T
         topk = self.topk
-        img = np.load(self.filenames[idx])
         if self.random_sample and self.phase == 'train':
             chosenid = sample(conf_list, topk, T=T)
             # chosenid = conf_list.argsort()[::-1][:topk]

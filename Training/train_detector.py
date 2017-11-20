@@ -643,7 +643,7 @@ class DetectorTrainer(object):
         input_data = TrainingDetectorData(data_dir=self.cfg.DIR.preprocess_result_path,
                                           split_path=splt_path,
                                           config=self.net_config, split_comber=split_combine,
-                                          phase='test')
+                                          phase='test', shuffle=False)
         start = time.time()
         for id in range(input_data.__len__()):
             imgs, bboxes, coord2, nzhw, filename = input_data.__getitem__(id)
@@ -696,5 +696,5 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        instance.train_2(sess, continue_training=False)
-        #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)
+        #instance.train_2(sess, continue_training=False)
+        instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)

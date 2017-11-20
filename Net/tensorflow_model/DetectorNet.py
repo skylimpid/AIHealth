@@ -162,6 +162,9 @@ class DecetorNet(object):
                                             strides=(1, 1, 1), padding="valid", data_format=self.DATA_FORMAT)
 
                 feat = tf.transpose(feat, perm=[0, 4, 1, 2, 3])
+                
+                out_shape = tf.shape(out)
+                out = tf.reshape(out, shape=[out_shape[0], out_shape[1], out_shape[2], out_shape[3], 3, 5])
 
             return conv1, res_block_1_2, res_block_2_2, resBlock3_3, resBlock4_3, comb3, resBlock5_3, comb2, feat, out
 

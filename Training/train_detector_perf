@@ -73,3 +73,73 @@ Epoch 31 finished on 1448 batches in avg loss 0.544557 and cur loss 0.540299.
 Epoch 37 finished on 1447 batches in avg loss 0.537473 and cur loss 0.525422.
 Epoch 38 finished on 1448 batches in avg loss 0.537316 and cur loss 0.530574.
 Epoch 39 finished on 1448 batches in avg loss 0.533906 and cur loss 0.532312.
+
+###
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
+Step: 10, Avg Loss: 0.784183, Cur Loss: 0.784183
+Step: 20, Avg Loss: 0.778457, Cur Loss: 0.772731
+Epoch 1 finished on 1447 batches in avg loss 0.773498 and cur loss 0.777148.
+Epoch 2 finished on 1448 batches in avg loss 0.764426 and cur loss 0.755934.
+Epoch 30 finished on 1448 batches in avg loss 0.535807 and cur loss 0.547894.
+Epoch 83 finished on 1447 batches in avg loss 0.516954 and cur loss 0.522610.
+Epoch 84 finished on 1448 batches in avg loss 0.516770 and cur loss 0.515758.
+Epoch 85 finished on 1448 batches in avg loss 0.517570 and cur loss 0.510377.
+
+###
+Use single classify_loss_with_pos_neg_with_hard_mining only
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
+Step: 20, Avg Loss: nan, Cur Loss: 0.783454
+Epoch 1 finished on 1448 batches in avg loss nan and cur loss 0.765568.
+Epoch 48 finished on 1448 batches in avg loss nan and cur loss 0.525415.
+Step: 10, Avg Loss: 0.541066, Cur Loss: 0.541066
+
+###
+Use single classify_loss_with_pos_neg_with_hard_mining only
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
+But update in Detector_Net_Loss.py as follows:
+        #neg_prob = tf.nn.sigmoid(neg_output)
+        neg_prob = neg_output
+Step: 10, Avg Loss: 0.677721, Cur Loss: 0.677721
+Epoch 1 finished on 1448 batches in avg loss 0.625859 and cur loss 0.595074.
+Epoch 2 finished on 1448 batches in avg loss nan and cur loss 0.420814.
+Epoch 9 finished on 1448 batches in avg loss 0.369015 and cur loss 0.367769.
+Epoch 10 finished on 1448 batches in avg loss 0.373300 and cur loss 0.365022.
+
+###
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
+But update in Detector_Net_Loss.py to remove sigmoid in two places as follows:
+        #neg_prob = tf.nn.sigmoid(neg_output)
+        neg_prob = neg_output
+Step: 10, Avg Loss: 0.648994, Cur Loss: 0.648994
+Epoch 1 finished on 1448 batches in avg loss 0.599607 and cur loss 0.498883.
+Epoch 2 finished on 1448 batches in avg loss 0.428982 and cur loss 0.401546.
+Epoch 3 finished on 1448 batches in avg loss 0.393580 and cur loss 0.390773.
+Epoch 10 finished on 1448 batches in avg loss 0.369563 and cur loss 0.364238.
+Epoch 19 finished on 1448 batches in avg loss 0.309773 and cur loss 0.319367.
+Epoch 22 finished on 1448 batches in avg loss 0.276673 and cur loss 0.277951.
+
+###
+Use Loss_2 version
+__C.TRAIN.LEARNING_RATE = 0.1
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
+Batch: 10, Avg Loss: 0.716349, Cur Loss: 0.716349
+Batch: 20, Avg Loss: 0.711590, Cur Loss: 0.706832
+Batch: 30, Avg Loss: 0.709577, Cur Loss: 0.705550
+Batch: 40, Avg Loss: 0.707931, Cur Loss: 0.702994
+Batch: 50, Avg Loss: 0.706562, Cur Loss: 0.701084
+Epoch 1 finished on 290 batches in avg loss 0.698102.
+Epoch 2 finished on 290 batches in avg loss 0.689795.
+Epoch 3 finished on 290 batches in avg loss 0.659623.
+Epoch 10 finished on 290 batches in avg loss 0.361587.
+Epoch 15 finished on 290 batches in avg loss 0.276596.
+Batch: 200, Avg Loss: 0.292803, Cur Loss: 0.258912
+Batch: 210, Avg Loss: 0.291338, Cur Loss: 0.262038
+Batch: 220, Avg Loss: 0.290432, Cur Loss: 0.271413
+Batch: 230, Avg Loss: 0.292155, Cur Loss: 0.330059
+Batch: 240, Avg Loss: 0.290219, Cur Loss: 0.245695
+Batch: 250, Avg Loss: 0.289020, Cur Loss: 0.260245

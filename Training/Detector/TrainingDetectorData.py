@@ -236,6 +236,72 @@ class TrainingDetectorData(DataSet):
             np.random.shuffle(self.shuffled_idx)
 
 
+def testBatchData():
+    from Net.tensorflow_model.DetectorNet import get_model
+
+    config128, net, loss, get_pbb = get_model()
+    config128['crop_size'] = [96, 96, 96]
+    from Training.configuration_training import cfg
+    data_set1 = TrainingDetectorData(cfg.DIR.preprocess_result_path,
+                                    cfg.DIR.detector_net_train_data_path,
+                                    config128,
+                                    phase='train',
+                                    shuffle=False)
+
+    config96, net, loss, get_pbb = get_model()
+    config96['crop_size'] = [96, 96, 96]
+    data_set2 = TrainingDetectorData(cfg.DIR.preprocess_result_path,
+                                    cfg.DIR.detector_net_train_data_path,
+                                    config96,
+                                    phase='train',
+                                    shuffle=False)
+
+    batch_size = 1
+    print("Fatching batch data")
+    batch_data1, batch_labels1, batch_coord1 = data_set1.getNextBatch(batch_size)
+    batch_data2, batch_labels2, batch_coord2 = data_set2.getNextBatch(batch_size)
+
+    print(batch_data1.shape)
+    print(batch_data1[0].shape)
+    print(batch_data2.shape)
+    print(batch_data2[0].shape)
+    print(batch_data2[0][0].shape)
+    print(batch_data2[0][0][0].shape)
+    print(batch_data2[0][0][0][0].shape)
+    print(batch_data2[0][0][0][0][0].shape)
+
+    for i in range(10):
+        print("%f:%f" % (batch_data1[0][0][i][0][0], batch_data2[0][0][i][0][0]))
+
+    print("-----")
+    for i in range(10):
+        print("%f:%f" % (batch_data1[0][0][0][i][0], batch_data2[0][0][0][i][0]))
+
+    print("-----")
+    for i in range(10):
+        print("%f:%f" % (batch_data1[0][0][0][0][i], batch_data2[0][0][0][0][i]))
+
+    print("-----")
+    print("Comparing batch...")
+    for i in range(batch_size):
+        eq = True
+        cnt = 0
+        for d in range(96):
+            for l in range (96):
+                for w in range (96):
+                    if (batch_data1[i][0][d][l][w] != batch_data2[i][0][d][l][w]):
+                        #print("ne for batch %d: [%d][%d][%d]" % (i, d, l, w))
+                        eq = False
+                        cnt += 1
+
+        if (eq):
+            print("Batch %d the same" % i)
+        else:
+            print("Batch %d not same for %d data" % (i, cnt))
+
+    print("Finished testing.")
+
+
 if __name__ == "__main__":
     from Net.tensorflow_model.DetectorNet import get_model
 

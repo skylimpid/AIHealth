@@ -1,4 +1,4 @@
-from Net.keras_model.DetecterNet_keras import DetectNet
+from Net.keras_model.detector_net_keras import DetectNet
 import keras.backend as K
 from keras.layers import Lambda, MaxPooling3D, Dropout, Dense, Activation
 import tensorflow as tf

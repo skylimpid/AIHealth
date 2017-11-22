@@ -1,8 +1,7 @@
 import tensorflow as tf
-from Net.Detector_Net_Loss_YOLO import DetectorNetLoss_YOLO
+from Net.detector_net_loss import DetectorNetLoss
 from Utils.utils import GetPBB
 from Training.constants import DIMEN_X, DIMEN_Y
-from collections import OrderedDict
 
 config = {}
 config['anchors'] = [10,30,60]
@@ -26,37 +25,31 @@ config['pad_value'] = 170
 config['augtype'] = {'flip':False,'swap':False,'scale':True,'rotate':False}
 config['blacklist'] = []
 
-class DecetorNetV2(object):
+class DecetorNet(object):
 
     DATA_FORMAT = 'channels_last'
-    activation_op = "swish"
 
     def __init__(self, img_row=DIMEN_X, img_col=DIMEN_X, img_depth=DIMEN_X, img_channel=1):
         self.img_row = img_row
         self.img_col = img_col
         self.img_depth = img_depth
         self.img_channel = img_channel
-        self.layers = OrderedDict()
 
     def fused_batch_normalization(self, input, name):
 
         # TODO: fused=True can improve this function performance but unfortunately TF can only support axis=3 if fused=True
         return tf.layers.batch_normalization(input, axis=4, momentum=0.1, epsilon=1e-05, fused=False, name=name)
 
+
     def build_resblock(self, input, cin, cout, name):
-        conv1_name = name + "_conv1"
+        assert(((cout >= cin) and (cout-cin)%2 == 0) or (cin > cout))
         res_conv1 = tf.layers.conv3d(input, cout, kernel_size=(3, 3, 3), strides=(1, 1, 1),
-                                     padding="same", data_format=self.DATA_FORMAT, name=conv1_name)
-        self.layers[conv1_name] = res_conv1
-
+                                     padding="same", data_format=self.DATA_FORMAT, name=name + "_conv1")
         res_conv1_bn = self.fused_batch_normalization(res_conv1, name=name+"_conv1_bn")
-        res_conv1_relu = activation(res_conv1_bn, op=self.activation_op)
-
-        conv2_name = name + "_conv2"
+        res_conv1_relu = tf.nn.relu(res_conv1_bn, name=name+"_conv1_relu")
         res_conv2 = tf.layers.conv3d(res_conv1_relu, cout, kernel_size=(3, 3, 3), strides=(1, 1, 1),
                                      padding="same", data_format=self.DATA_FORMAT,
-                                     name=conv2_name)
-        self.layers[conv2_name] = res_conv2
+                                     name=name+"_conv2")
         res_conv2_bn = self.fused_batch_normalization(res_conv2, name=name+"_conv2_bn")
 
         # RestNet shortcut
@@ -65,11 +58,10 @@ class DecetorNetV2(object):
             res_shortcut = tf.layers.conv3d(input, cout, kernel_size=(1, 1, 1), strides=(1, 1, 1), padding="same",
                                             data_format=self.DATA_FORMAT,
                                             name=name+"_shortcut")
-            self.layers[name+"_shortcut"] = res_shortcut
             res_shortcut = self.fused_batch_normalization(res_shortcut, name=name+"_shortcut_bn")
 
         res_op = tf.add(res_conv2_bn, res_shortcut, name=name+"_op")
-        res_op_relu = activation(res_op, op=self.activation_op)
+        res_op_relu = tf.nn.relu(res_op, name="res_op_relu")
 
         return res_op_relu
 
@@ -90,15 +82,14 @@ class DecetorNetV2(object):
                 conv1 = tf.layers.conv3d(X, 16, kernel_size=(3, 3, 3), strides=(1, 1, 1), padding="same",
                                               data_format=self.DATA_FORMAT,
                                               name="conv1")
-                self.layers["conv1"] = conv1
-                conv1_nm = self.fused_batch_normalization(conv1, name="conv1_nm")
-                conv1_relu = activation(conv1_nm, op=self.activation_op)
+                #conv1_nm = self.fused_batch_normalization(conv1, name="conv1_nm")
+                conv1_nm = tf.layers.batch_normalization(conv1, axis=4)
+                conv1_relu = tf.nn.relu(conv1_nm, name="conv1_relu")
 
                 conv2 = tf.layers.conv3d(conv1_relu, 16, kernel_size=(3, 3, 3), strides=(1, 1, 1),
                                                padding="same", data_format=self.DATA_FORMAT, name="conv2")
-                self.layers["conv2"] = conv2
                 conv2_nm = self.fused_batch_normalization(conv2, name="conv2_nm")
-                conv2_relu = activation(conv2_nm, op=self.activation_op)
+                conv2_relu = tf.nn.relu(conv2_nm, name="conv2_relu")
 
                 maxpool1 = tf.layers.max_pooling3d(conv2_relu, pool_size=(2, 2, 2), strides=(2, 2, 2),
                                                    padding="valid", data_format=self.DATA_FORMAT,
@@ -138,7 +129,7 @@ class DecetorNetV2(object):
                                                  use_bias=False, data_format=self.DATA_FORMAT,
                                                  name="up1")
                 up1_bn = self.fused_batch_normalization(up1, name="up1_bn")
-                up1_relu = activation(up1_bn, op=self.activation_op)
+                up1_relu = tf.nn.relu(up1_bn, name="up1_relu")
                 comb3 = tf.concat([up1_relu, resBlock3_3], axis=4, name="comb")
 
             # construct resBlock5
@@ -152,7 +143,7 @@ class DecetorNetV2(object):
                                                      use_bias=False, data_format=self.DATA_FORMAT,
                                                      name="up2")
                 up2_bn = self.fused_batch_normalization(up2, name="up2_bn")
-                up2_relu = activation(up2_bn, op=self.activation_op)
+                up2_relu = tf.nn.relu(up2_bn, name="up2_relu")
                 comb2 = tf.concat([up2_relu, res_block_2_2, coord], axis=4, name="comb")
 
             # construct resBlock6
@@ -164,42 +155,22 @@ class DecetorNetV2(object):
 
             with tf.variable_scope("global/detector_scope/output"):
                 output_0 = tf.layers.conv3d(dropout, 64, kernel_size=(1, 1, 1), strides=(1, 1, 1), padding="valid",
-                                            data_format=self.DATA_FORMAT, name="output_conv1")
-                self.layers["output_conv1"] = output_0
-                output_relu = activation(output_0, op=self.activation_op)
+                                            data_format=self.DATA_FORMAT)
+                output_relu = tf.nn.relu(output_0)
                 out = tf.layers.conv3d(output_relu, 5 * len(config['anchors']), kernel_size=(1, 1, 1),
-                                       strides=(1, 1, 1), padding="valid", data_format=self.DATA_FORMAT,
-                                       name="output")
+                                            strides=(1, 1, 1), padding="valid", data_format=self.DATA_FORMAT)
+
                 feat = tf.transpose(feat, perm=[0, 4, 1, 2, 3])
+                
+                out_shape = tf.shape(out)
+                out = tf.reshape(out, shape=[out_shape[0], out_shape[1], out_shape[2], out_shape[3], 3, 5])
 
-            return feat, out
-
-
-# TODO: replace this with build-in leaky_relu after we upgrade to tensorflow version 1.4 or later
-# This implementation uses less memory
-def leaky_relu(x, leak=0.1, name="lrelu"):
-    with tf.variable_scope(name):
-        f1 = 0.5 * (1 + leak)
-        f2 = 0.5 * (1 - leak)
-        return f1 * x + f2 * abs(x)
-
-
-def swish(x, name="swish"):
-    with tf.variable_scope(name):
-        return x*tf.nn.sigmoid(x)
-
-
-def activation(x, leak=0.1, op="relu"):
-    if op == "lrelu":
-        return leaky_relu(x, leak=leak, name=op)
-    elif op == "swish":
-        return swish(x, name=op)
-    return tf.nn.relu(x)
+            return conv1, res_block_1_2, res_block_2_2, resBlock3_3, resBlock4_3, comb3, resBlock5_3, comb2, feat, out
 
 
 def get_model():
-    net = DecetorNetV2()
-    loss = DetectorNetLoss_YOLO()
+    net = DecetorNet()
+    loss = DetectorNetLoss(config['num_hard'])
     get_pbb = GetPBB(config)
     return config, net, loss, get_pbb
 
@@ -236,7 +207,7 @@ if __name__ == '__main__':
     # if we specify a number instead of None, it works
     #coord = tf.placeholder(tf.float32, shape=(100, 3, 32, 32, 32))
     coord = tf.placeholder(tf.float32, shape=(None, 3, 24, 24, 24))
-    net = DecetorNetV2()
+    net = DecetorNet()
     net.getDetectorNet(X, coord)
 
     print (get_model())

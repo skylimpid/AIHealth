@@ -4,8 +4,8 @@ import shutil
 import numpy as np
 import tensorflow as tf
 
-from Training.Detector.TrainingDetectorData import TrainingDetectorData
-from Net.tensorflow_model.DetectorNetV2 import get_model
+from Training.Detector.training_detector_data import TrainingDetectorData
+from Net.tensorflow_model.detector_net_2 import get_model
 from Training.configuration_training import cfg
 from Utils.split_combine import SplitComb
 from Training.constants import DIMEN_X, DIMEN_Y, MARGIN, SIDE_LEN

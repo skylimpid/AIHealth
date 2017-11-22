@@ -3,10 +3,10 @@ import pandas
 import time
 import numpy as np
 
-from Utils.DataSet import DataSet
-from Utils.DataSetUtils import simpleCrop, sample, ClassifierDataAugment
+from Utils.data_set import DataSet
+from Utils.data_set_utils import simpleCrop, sample, ClassifierDataAugment
 from Training.configuration_training import cfg
-from Net.tensorflow_model.ClassiferNet import get_config
+from Net.tensorflow_model.classifier_net import get_config
 
 
 class TrainingClassifierData(DataSet):

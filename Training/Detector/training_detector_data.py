@@ -3,8 +3,8 @@ import os
 import math
 
 import numpy as np
-from Utils.DataSet import DataSet
-from Utils.DataSetUtils import Crop, LabelMapping, DetectorDataAugmentRotate, DetectorDataAugmentFlip
+from Utils.data_set import DataSet
+from Utils.data_set_utils import Crop, LabelMapping, DetectorDataAugmentRotate, DetectorDataAugmentFlip
 
 
 blacklist = ['868b024d9fa388b7ddab12ec1c06af38','990fbe3f0a1b53878669967b9afd1441','adc3bbc63d40f8761c59be10f1e504c3']
@@ -237,7 +237,7 @@ class TrainingDetectorData(DataSet):
 
 
 def testBatchData():
-    from Net.tensorflow_model.DetectorNet import get_model
+    from Net.tensorflow_model.detector_net import get_model
 
     config128, net, loss, get_pbb = get_model()
     config128['crop_size'] = [96, 96, 96]
@@ -303,7 +303,7 @@ def testBatchData():
 
 
 if __name__ == "__main__":
-    from Net.tensorflow_model.DetectorNet import get_model
+    from Net.tensorflow_model.detector_net import get_model
 
     config, net, loss, get_pbb = get_model()
     from Training.configuration_training import cfg

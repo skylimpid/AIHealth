@@ -2,8 +2,8 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-from Utils.DataSet import DataSet
-from Utils.DataSetUtils import augment, Crop, LabelMapping
+from Utils.data_set import DataSet
+from Utils.data_set_utils import augment, Crop, LabelMapping
 
 
 class PredictDetectorData(DataSet):

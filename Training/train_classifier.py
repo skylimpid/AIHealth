@@ -3,11 +3,11 @@ import os
 import time
 import shutil
 
-from Training.Classifier.TrainingClassifierData import TrainingClassifierData
-from Net.tensorflow_model.ClassiferNet import get_model
-from Net.Classifer_Net_Loss import ClassiferNetLoss
+from Training.Classifier.training_classifier_data import TrainingClassifierData
+from Net.tensorflow_model.classifier_net import get_model
+from Net.classifier_net_loss import ClassiferNetLoss
 from Training.configuration_training import cfg
-from Net.tensorflow_model.DetectorNet import DecetorNet
+from Net.tensorflow_model.detector_net import DecetorNet
 from Training.constants import CLASSIFIER_NET_TENSORBOARD_LOG_DIR
 
 

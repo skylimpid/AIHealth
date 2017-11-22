@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from Net.tensorflow_model.DetectorNet import DecetorNet
+from Net.tensorflow_model.detector_net import DecetorNet
 from Training.configuration_training import cfg
 from Training.constants import DIMEN_X, DIMEN_Y
 

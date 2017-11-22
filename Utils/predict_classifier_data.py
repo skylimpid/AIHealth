@@ -4,8 +4,8 @@ import numpy as np
 import tensorflow as tf
 #from Utils.utils import nms, iou
 from Utils.nms_cython import nms, iou
-from Utils.DataSet import DataSet
-from Utils.DataSetUtils import simpleCrop, sample, augment
+from Utils.data_set import DataSet
+from Utils.data_set_utils import simpleCrop, sample, augment
 
 
 class PredictClassifierData(DataSet):

@@ -3,7 +3,7 @@ import os
 import shutil
 from Utils.utils import nms, iou
 from Training.configuration_training import cfg
-from Net.tensorflow_model.ClassiferNet import get_config
+from Net.tensorflow_model.classifier_net import get_config
 
 
 def main(config, split, bboxpath):

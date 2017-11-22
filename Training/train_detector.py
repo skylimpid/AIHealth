@@ -23,7 +23,7 @@ class DetectorTrainer(object):
         self.cfg = cfg
 
         #self.build_model()
-        self.build_model_2()
+        self.build_model()
 
         self.validate_average_iou_holder = tf.placeholder(tf.float32)
         self.validate_average_iou_tensor = tf.summary.scalar("validate_average_iou", self.validate_average_iou_holder)
@@ -696,5 +696,5 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        #instance.train_2(sess, continue_training=False)
-        instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)
+        instance.train(sess, continue_training=False)
+        #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)

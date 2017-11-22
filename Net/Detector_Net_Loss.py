@@ -26,8 +26,10 @@ class DetectorNetLoss():
 
         #if self.num_hard > 0 and train:
         #    neg_output, neg_labels = hard_mining(neg_output, neg_labels, self.num_hard * batch_size)
-        neg_prob = tf.nn.sigmoid(neg_output)
-
+        # Note: sigmoid_cross_entropy_with_logits already contains sigmoid, please do not sigmoid in advance,
+        # which may cause loss not to decrease.
+        #neg_prob = tf.nn.sigmoid(neg_output)
+        neg_prob = neg_output
 
         pos_prob = tf.nn.sigmoid(pos_output[:, 0])
         pz, ph, pw, pd = pos_output[:, 1], pos_output[:, 2], pos_output[:, 3], pos_output[:, 4]
@@ -50,8 +52,7 @@ class DetectorNetLoss():
 
         # create loss based on the hard_mining
         _, idcs = tf.nn.top_k(neg_output, self.num_hard * batch_size)
-        neg_output = tf.gather(neg_output, idcs)
-        neg_prob = tf.nn.sigmoid(neg_output)
+        neg_prob = tf.gather(neg_output, idcs)
         neg_labels = tf.gather(neg_labels, idcs)
 
         classify_loss_with_pos_neg_with_hard_mining = tf.reduce_mean(0.5 * tf.nn.sigmoid_cross_entropy_with_logits(

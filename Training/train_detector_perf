@@ -143,3 +143,22 @@ Batch: 220, Avg Loss: 0.290432, Cur Loss: 0.271413
 Batch: 230, Avg Loss: 0.292155, Cur Loss: 0.330059
 Batch: 240, Avg Loss: 0.290219, Cur Loss: 0.245695
 Batch: 250, Avg Loss: 0.289020, Cur Loss: 0.260245
+
+###
+Use Loss first version
+Step: 10, Avg Loss: 0.647705, Cur Loss: 0.647705
+Epoch 1 finished on 1448 batches in avg loss 0.604641 and cur loss 0.528300.
+Epoch 2 finished on 1447 batches in avg loss 0.432919 and cur loss 0.397833.
+Epoch 4 finished on 1448 batches in avg loss 0.378208 and cur loss 0.376583.
+Epoch 10 finished on 1448 batches in avg loss 0.289488 and cur loss 0.241632.
+Epoch 20 finished on 1448 batches in avg loss 0.233479 and cur loss 0.211144.
+Epoch 30 finished on 1448 batches in avg loss 0.212138 and cur loss 0.202847.
+Epoch 40 finished on 1448 batches in avg loss 0.197894 and cur loss 0.196362.
+Epoch 50 finished on 1448 batches in avg loss 0.189050 and cur loss 0.182118.
+Epoch 60 finished on 1448 batches in avg loss 0.189558 and cur loss 0.323245.
+Epoch 70 finished on 1448 batches in avg loss 0.183797 and cur loss 0.177723.
+Epoch 80 finished on 1448 batches in avg loss 0.178727 and cur loss 0.171339.
+Epoch 98 finished on 1448 batches in avg loss 0.178775 and cur loss 0.172377.
+Epoch 99 finished on 1448 batches in avg loss 0.178105 and cur loss 0.170557.
+Epoch 100 finished on 1448 batches in avg loss 0.177680 and cur loss 0.214867.
+The total time used in training: 87498.74522042274 seconds (24.3 hours)

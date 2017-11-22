@@ -1,6 +1,6 @@
 import tensorflow as tf
 #from Net.Detector_Net_Loss import DetectorNetLoss
-from Net.Detector_Net_Loss_2 import DetectorNetLoss
+from Net.Detector_Net_Loss import DetectorNetLoss
 from Utils.utils import GetPBB
 from Training.constants import DIMEN_X, DIMEN_Y
 

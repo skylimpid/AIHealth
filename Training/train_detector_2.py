@@ -1,8 +1,8 @@
-import tensorflow as tf
 import os
 import time
-import numpy as np
 import shutil
+import numpy as np
+import tensorflow as tf
 
 from Training.Detector.TrainingDetectorData import TrainingDetectorData
 from Net.tensorflow_model.DetectorNetV2 import get_model
@@ -11,9 +11,11 @@ from Utils.split_combine import SplitComb
 from Training.constants import DIMEN_X, DIMEN_Y, MARGIN, SIDE_LEN
 from Training.configuration_training import DETECTOR_NET_TENSORBOARD_LOG_DIR
 from Utils.nms_cython import nms, iou
-from tensorflow.python import debug as tf_debug
 
-class DetectorTrainerV2(object):
+#######
+# Note: not tested yet
+#######
+class DetectorTrainer(object):
 
     """
     Initializer
@@ -358,7 +360,7 @@ class DetectorTrainerV2(object):
 
 
 if __name__ == "__main__":
-    instance = DetectorTrainerV2(cfg)
+    instance = DetectorTrainer(cfg)
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:

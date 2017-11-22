@@ -83,13 +83,13 @@ class ClassiferNet(object):
             # print(dense1.shape)
             dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_layer_2")
             out = tf.reshape(dense2, (-1, xsize[1]))
-            # print(out.shape)
+            print(out.shape)
             baseline = tf.constant(value=-30.0, dtype=tf.float32)
             base_prob = tf.nn.sigmoid(baseline)
             # print(base_prob.shape)
             # print(base_prob)
-            casePred = 1-tf.reduce_prod(1-out, axis=1)*(1-base_prob)
-            # print(casePred.shape)
+            casePred = 1-tf.reduce_prod(1-out, axis=-1, keep_dims = True)*(1-base_prob)
+            print(casePred.shape)
             return nodulePred, casePred, out
 
 
@@ -102,8 +102,8 @@ def get_config():
     return config
 
 if __name__ == '__main__':
-    X = tf.placeholder(tf.float32, shape=(None, 3, 1, 128, 128, 128))
-    coord = tf.placeholder(tf.float32, shape=(None, 3, 3, 32, 32, 32))
+    X = tf.placeholder(tf.float32, shape=(None, 5, 1, 96, 96, 96))
+    coord = tf.placeholder(tf.float32, shape=(None, 5, 3, 24, 24, 24))
 
     net1 = DecetorNet()
 

@@ -44,34 +44,36 @@ class TrainingClassifierData(DataSet):
             labels = np.array(pandas.read_csv(labelfile))
             for i in range(len(labels)):
                 self.yset[labels[i][0]] = labels[i][1]
-        idcs = [f.split('-')[0] for f in idcs]
+        # idcs = [f.split('-')[0] for f in idcs]
         # print (idcs)
 
         self.crop = simpleCrop(config, phase)
         self.index = 0
         self.length = self.__len__()
 
-    def __getitem__(self, idx, split=None, test=True):
+    def __getitem__(self, idx, split=None, test=False):
         t = time.time()
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
         img = np.load(self.filenames[idx])
         fileName = self.filenames[idx].split('/')[-1].split('_')[0]
+
         if test:
             print(self.candidate_box[fileName])
+
         pbb = np.load(self.candidate_box[fileName])
-        print(len(pbb))
-        if pbb.ndim != 3:
-            print("Invalid shape")
+
         if test:
-            print("shape1", pbb.shape, pbb.ndim)
+            print("pbb shape: {}, ndim: {}, len: {}".format(pbb.shape, pbb.ndim, len(pbb)))
+
         pbb = np.squeeze(pbb, axis=0)
         if test:
-            print("shape2", pbb.shape)
+            print("pbb squeezed shape: ", pbb.shape)
+
         pbb_label = np.load(self.pbb_label[fileName])
         pbb_label = np.squeeze(pbb_label, axis=0)
         if test:
-            print(pbb_label.shape)
-            print(pbb)
+            print("pbb_label shape: ", pbb_label.shape)
+
         conf_list = pbb[:, 0]
         T = self.T
         topk = self.topk
@@ -187,6 +189,7 @@ if __name__ == "__main__":
                                      cfg.DIR.kaggle_full_labels,
                                      cfg.DIR.classifier_net_train_data_path
                                      , get_config())
-    dataset.__getitem__(0, test=True)
+
+    dataset.__getitem__(1, test=True)
 
     #dataset.getNextBatch(1)

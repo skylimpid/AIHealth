@@ -159,5 +159,8 @@ if __name__ == "__main__":
         # var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
         # restorer = tf.train.Saver(var_detector)
         # restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        #var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
+        #restorer = tf.train.Saver(var_detector)
+        #restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
         instance.train(sess)
 

@@ -7,7 +7,7 @@ from Training.Classifier.training_classifier_data import TrainingClassifierData
 from Net.tensorflow_model.classifier_net import get_model
 from Net.classifier_net_loss import ClassifierNetLoss
 from Training.configuration_training import cfg
-from Net.tensorflow_model.detector_net import DecetorNet
+from Net.tensorflow_model.detector_net import DetectorNet
 from Training.constants import CLASSIFIER_NET_TENSORBOARD_LOG_DIR, DIMEN_X, DIMEN_Y
 
 
@@ -155,7 +155,7 @@ if __name__ == "__main__":
         return variables_to_restore
 
     with tf.Session() as sess:
-        detectorNet = DecetorNet()
+        detectorNet = DetectorNet()
         instance = ClassifierTrainer(cfg, detectorNet)
         variables = tf.global_variables()
         var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))

@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from Net.tensorflow_model.detector_net import DecetorNet
+from Net.tensorflow_model.detector_net import DetectorNet
 from Training.configuration_training import cfg
 from Training.constants import DIMEN_X, DIMEN_Y
 
@@ -42,7 +42,7 @@ class ClassifierNet(object):
 
     def __init__(self, detectorNet, img_row=DIMEN_X, img_col=DIMEN_X, img_depth=DIMEN_X, img_channel=1):
         if detectorNet is None:
-            self.detectorNet = DecetorNet()
+            self.detectorNet = DetectorNet()
         else:
             self.detectorNet = detectorNet
         self.img_row = img_row
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     X = tf.placeholder(tf.float32, shape=(None, 5, 1, 96, 96, 96))
     coord = tf.placeholder(tf.float32, shape=(None, 5, 3, 24, 24, 24))
 
-    net1 = DecetorNet()
+    net1 = DetectorNet()
 
     net2 = ClassifierNet(net1)
 

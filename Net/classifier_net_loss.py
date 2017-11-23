@@ -1,6 +1,6 @@
 import tensorflow as tf
 from Net.tensorflow_model.classifier_net import get_config, ClassifierNet
-from Net.tensorflow_model.detector_net import DecetorNet
+from Net.tensorflow_model.detector_net import DetectorNet
 
 class ClassifierNetLoss(object):
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     X = tf.placeholder(tf.float32, shape=[None, topK, 1, 96, 96, 96])
     coord = tf.placeholder(tf.float32, shape=[None, topK, 3, 24, 24, 24])
 
-    net1 = DecetorNet()
+    net1 = DetectorNet()
 
     net2 = ClassifierNet(net1)
 

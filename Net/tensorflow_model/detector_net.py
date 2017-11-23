@@ -25,7 +25,7 @@ config['pad_value'] = 170
 config['augtype'] = {'flip':False,'swap':False,'scale':True,'rotate':False}
 config['blacklist'] = []
 
-class DecetorNet(object):
+class DetectorNet(object):
 
     DATA_FORMAT = 'channels_last'
 
@@ -169,7 +169,7 @@ class DecetorNet(object):
 
 
 def get_model():
-    net = DecetorNet()
+    net = DetectorNet()
     loss = DetectorNetLoss(config['num_hard'])
     get_pbb = GetPBB(config)
     return config, net, loss, get_pbb
@@ -207,7 +207,7 @@ if __name__ == '__main__':
     # if we specify a number instead of None, it works
     #coord = tf.placeholder(tf.float32, shape=(100, 3, 32, 32, 32))
     coord = tf.placeholder(tf.float32, shape=(None, 3, 24, 24, 24))
-    net = DecetorNet()
+    net = DetectorNet()
     net.getDetectorNet(X, coord)
 
     print (get_model())

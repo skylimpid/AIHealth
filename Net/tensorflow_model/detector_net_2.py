@@ -26,7 +26,7 @@ config['pad_value'] = 170
 config['augtype'] = {'flip':False,'swap':False,'scale':True,'rotate':False}
 config['blacklist'] = []
 
-class DecetorNetV2(object):
+class DetectorNetV2(object):
 
     DATA_FORMAT = 'channels_last'
     activation_op = "swish"
@@ -198,7 +198,7 @@ def activation(x, leak=0.1, op="relu"):
 
 
 def get_model():
-    net = DecetorNetV2()
+    net = DetectorNetV2()
     loss = DetectorNetLoss_YOLO()
     get_pbb = GetPBB(config)
     return config, net, loss, get_pbb
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     # if we specify a number instead of None, it works
     #coord = tf.placeholder(tf.float32, shape=(100, 3, 32, 32, 32))
     coord = tf.placeholder(tf.float32, shape=(None, 3, 24, 24, 24))
-    net = DecetorNetV2()
+    net = DetectorNetV2()
     net.getDetectorNet(X, coord)
 
     print (get_model())

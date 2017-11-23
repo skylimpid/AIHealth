@@ -1,14 +1,14 @@
-import tensorflow as tf
 import os
 import time
 import shutil
+import tensorflow as tf
 
 from Training.Classifier.training_classifier_data import TrainingClassifierData
 from Net.tensorflow_model.classifier_net import get_model
 from Net.classifier_net_loss import ClassiferNetLoss
 from Training.configuration_training import cfg
 from Net.tensorflow_model.detector_net import DecetorNet
-from Training.constants_mj import CLASSIFIER_NET_TENSORBOARD_LOG_DIR
+from Training.constants_mj import CLASSIFIER_NET_TENSORBOARD_LOG_DIR, DIMEN_X, DIMEN_Y
 
 
 class ClassifierTrainer(object):
@@ -101,8 +101,8 @@ class ClassifierTrainer(object):
 
         topK = self.net_config['topk']
 
-        self.X = tf.placeholder(tf.float32, shape=[None, topK, 1, 96, 96, 96])
-        self.coord = tf.placeholder(tf.float32, shape=[None, topK, 3, 24, 24, 24])
+        self.X = tf.placeholder(tf.float32, shape=[None, topK, 1, DIMEN_X, DIMEN_X, DIMEN_X])
+        self.coord = tf.placeholder(tf.float32, shape=[None, topK, 3, DIMEN_Y, DIMEN_Y, DIMEN_Y])
         self.labels = tf.placeholder(tf.float32, shape=[None, 1])
         self.isnod = tf.placeholder(tf.float32, shape=[None, topK])
 
@@ -159,8 +159,5 @@ if __name__ == "__main__":
         # var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
         # restorer = tf.train.Saver(var_detector)
         # restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
-        #var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
-        #restorer = tf.train.Saver(var_detector)
-        #restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
         instance.train(sess)
 

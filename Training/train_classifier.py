@@ -153,11 +153,11 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         detectorNet = DecetorNet()
         instance = ClassifierTrainer(cfg, detectorNet)
-        # variables = tf.global_variables()
-        # var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
-        # restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
-        var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
-        restorer = tf.train.Saver(var_detector)
-        restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        variables = tf.global_variables()
+        var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
+        #var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
+        #restorer = tf.train.Saver(var_detector)
+        #restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
         instance.train(sess)
 

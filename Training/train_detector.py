@@ -644,11 +644,16 @@ class DetectorTrainer(object):
                                           split_path=splt_path,
                                           config=self.net_config, split_comber=split_combine,
                                           phase='test', shuffle=False)
+
+        input_data_len = input_data.__len__()
+        print("Total %d patients to be predicted." % (input_data_len))
+
         start = time.time()
-        for id in range(input_data.__len__()):
+        for id in range(input_data_len):
             imgs, bboxes, coord2, nzhw, filename = input_data.__getitem__(id)
             filename = filename.split('/')[-1].split('_')[0]
-            print("Start to predict user:{}".format(filename))
+
+            print("Start to predict the {}th patient:{}".format(id, filename))
 
             total_size_per_img = imgs.shape[0]
 

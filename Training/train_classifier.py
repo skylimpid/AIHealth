@@ -5,10 +5,10 @@ import tensorflow as tf
 
 from Training.Classifier.training_classifier_data import TrainingClassifierData
 from Net.tensorflow_model.classifier_net import get_model
-from Net.classifier_net_loss import ClassiferNetLoss
+from Net.classifier_net_loss import ClassifierNetLoss
 from Training.configuration_training import cfg
 from Net.tensorflow_model.detector_net import DecetorNet
-from Training.constants_mj import CLASSIFIER_NET_TENSORBOARD_LOG_DIR, DIMEN_X, DIMEN_Y
+from Training.constants import CLASSIFIER_NET_TENSORBOARD_LOG_DIR, DIMEN_X, DIMEN_Y
 
 
 class ClassifierTrainer(object):
@@ -59,7 +59,7 @@ class ClassifierTrainer(object):
 
         for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
 
-            batch_count = 1
+            batch_count = 0
             total_loss = 0
             total_accuracy = 0
             while dataset.hasNextBatch():
@@ -67,19 +67,23 @@ class ClassifierTrainer(object):
                 batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
 
                 _, loss, accuracy_op = sess.run([self.loss_1_optimizer, self.loss, self.accuracy],
-                                                feed_dict={self.X: batch_data, self.coord: batch_coord,
+                                                feed_dict={self.X: batch_data,
+                                                           self.coord: batch_coord,
                                                            self.labels: batch_labels,
                                                            self.isnod: batch_isnode})
-                if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
-                    print("Current batch is %d" % batch_count)
 
                 batch_count += 1
                 total_loss += loss
                 total_accuracy += accuracy_op
-            print("Epoch %d finished." % epoch)
+
+                if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
+                    print("Current batch: %d, loss: %f, accuracy: %f" % (batch_count, loss, accuracy_op))
+
+            print("Epoch %d finished in loss: %f and accuracy: %f" % (epoch, total_loss/batch_count, total_accuracy/batch_count))
             feed = {average_loss_holder: total_loss/batch_count, average_accuracy_holder: total_accuracy/batch_count}
             average_loss_str, average_accuracy_str = sess.run([average_loss_tensor, average_accuracy_tensor],
                                                               feed_dict=feed)
+
             writer.add_summary(average_loss_str, epoch)
             writer.add_summary(average_accuracy_str, epoch)
             dataset.reset()
@@ -97,7 +101,7 @@ class ClassifierTrainer(object):
 
     def build_model(self):
 
-        self.net_config, classifer_net_object = get_model(self.detectorNet)
+        self.net_config, classifier_net_object = get_model(self.detectorNet)
 
         topK = self.net_config['topk']
 
@@ -106,9 +110,9 @@ class ClassifierTrainer(object):
         self.labels = tf.placeholder(tf.float32, shape=[None, 1])
         self.isnod = tf.placeholder(tf.float32, shape=[None, topK])
 
-        nodulePred, casePred, casePred_each = classifer_net_object.getClassiferNet(self.X, self.coord)
+        nodulePred, casePred, casePred_each = classifier_net_object.get_classifier_net(self.X, self.coord)
 
-        loss_object = ClassiferNetLoss(self.net_config)
+        loss_object = ClassifierNetLoss(self.net_config)
 
         self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
 

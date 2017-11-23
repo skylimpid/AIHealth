@@ -3,7 +3,7 @@ import keras.backend as K
 from keras.layers import Lambda, MaxPooling3D, Dropout, Dense, Activation
 import tensorflow as tf
 
-class ClassiferNet():
+class ClassifierNet():
     def __init(self, topK):
         self.NoduleNet = DetectNet()
         self.topK = topK

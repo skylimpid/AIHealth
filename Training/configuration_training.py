@@ -1,7 +1,7 @@
 from easydict import EasyDict as edict
 #from Training.constants import DATA_BASE_DIR, SYS_DIR, KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_TRAIN_DATA, \
 #    LUNA_VALIDATE_DATA, DETECTOR_NET_TENSORBOARD_LOG_DIR, CLASSIFIER_NET_TENSORBOARD_LOG_DIR
-from Training.constants_mj import DATA_BASE_DIR, SYS_DIR, KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_TRAIN_DATA, \
+from Training.constants import DATA_BASE_DIR, SYS_DIR, KAGGLE_TRAIN_DATA, KAGGLE_VALIDATE_DATA, LUNA_TRAIN_DATA, \
     LUNA_VALIDATE_DATA, DETECTOR_NET_TENSORBOARD_LOG_DIR, CLASSIFIER_NET_TENSORBOARD_LOG_DIR
 
 __C = edict()
@@ -64,8 +64,8 @@ __C.DIR.classifier_net_saver_file_prefix = "classifier_model_weights_iter_"
 #__C.DIR.classifier_net_train_data_path = DATA_BASE_DIR + "full.npy"
 __C.DIR.classifier_net_train_data_path = __C.DIR.train_split_data_path + KAGGLE_TRAIN_DATA
 __C.DIR.classifier_net_validate_data_path = __C.DIR.train_split_data_path + KAGGLE_VALIDATE_DATA
-__C.DIR.classifier_net_intermediate_candidate_box = DATA_BASE_DIR +"classifer_intermediate/candidate_box"
-__C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifer_intermediate/pbb"
+__C.DIR.classifier_net_intermediate_candidate_box = DATA_BASE_DIR +"classifier_intermediate/candidate_box"
+__C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifier_intermediate/pbb"
 
 
 # HyperParameters for Training.

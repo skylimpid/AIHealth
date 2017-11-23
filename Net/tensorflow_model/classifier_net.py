@@ -36,7 +36,7 @@ config['miss_ratio'] = 1
 config['miss_thresh'] = 0.03
 
 
-class ClassiferNet(object):
+class ClassifierNet(object):
 
     DATA_FORMAT = 'channels_first'
 
@@ -50,7 +50,7 @@ class ClassiferNet(object):
         self.img_depth = img_depth
         self.img_channel = img_channel
 
-    def getClassiferNet(self, X, coord):
+    def get_classifier_net(self, X, coord):
         xsize = X.get_shape().as_list()
         X = tf.reshape(X, (-1, self.img_channel, self.img_row, self.img_col, self.img_depth))
         # print(X.shape)
@@ -94,7 +94,7 @@ class ClassiferNet(object):
 
 
 def get_model(trained_detectorNet):
-    net = ClassiferNet(trained_detectorNet)
+    net = ClassifierNet(trained_detectorNet)
     return config, net
 
 
@@ -107,6 +107,6 @@ if __name__ == '__main__':
 
     net1 = DecetorNet()
 
-    net2 = ClassiferNet(net1)
+    net2 = ClassifierNet(net1)
 
-    net2.getClassiferNet(X, coord)
+    net2.get_classifier_net(X, coord)

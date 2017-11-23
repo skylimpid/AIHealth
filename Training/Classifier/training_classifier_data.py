@@ -22,7 +22,7 @@ class TrainingClassifierData(DataSet):
         # self.labels = np.array(pandas.read_csv(config['labelfile']))
 
         datadir = preprocess_result_dir
-        bboxpath = bboxpath_dir
+        # bboxpath = bboxpath_dir
         self.phase = phase
         self.candidate_box = {}
         for f in os.listdir(cfg.DIR.classifier_net_intermediate_candidate_box):
@@ -51,19 +51,27 @@ class TrainingClassifierData(DataSet):
         self.index = 0
         self.length = self.__len__()
 
-    def __getitem__(self, idx, split=None):
+    def __getitem__(self, idx, split=None, test=True):
         t = time.time()
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
         img = np.load(self.filenames[idx])
         fileName = self.filenames[idx].split('/')[-1].split('_')[0]
-        print(self.candidate_box[fileName])
+        if test:
+            print(self.candidate_box[fileName])
         pbb = np.load(self.candidate_box[fileName])
-        print("shape1", pbb.shape)
-        pbb = np.squeeze(pbb)
-        print("shape2", pbb.shape)
+        print(len(pbb))
+        if pbb.ndim != 3:
+            print("Invalid shape")
+        if test:
+            print("shape1", pbb.shape, pbb.ndim)
+        pbb = np.squeeze(pbb, axis=0)
+        if test:
+            print("shape2", pbb.shape)
         pbb_label = np.load(self.pbb_label[fileName])
-        pbb_label = np.squeeze(pbb_label)
-        #print(pbb_label.shape)
+        pbb_label = np.squeeze(pbb_label, axis=0)
+        if test:
+            print(pbb_label.shape)
+            print(pbb)
         conf_list = pbb[:, 0]
         T = self.T
         topk = self.topk
@@ -75,7 +83,7 @@ class TrainingClassifierData(DataSet):
         croplist = np.zeros([topk, 1, self.crop_size[0], self.crop_size[1], self.crop_size[2]]).astype('float32')
         coordlist = np.zeros([topk, 3, int(self.crop_size[0] / self.stride), int(self.crop_size[1] / self.stride),
                               int(self.crop_size[2] / self.stride)]).astype('float32')
-        padmask = np.concatenate([np.ones(len(chosenid)), np.zeros(self.topk - len(chosenid))])
+        #padmask = np.concatenate([np.ones(len(chosenid)), np.zeros(self.topk - len(chosenid))])
         isnodlist = np.zeros([topk])
 
         for i, id in enumerate(chosenid):
@@ -140,7 +148,7 @@ class TrainingClassifierData(DataSet):
                     #final_y = np.append(final_y, np.expand_dims(y, axis=0), axis=0)
                     final_y = np.append(final_y, y, axis=0)
 
-                self.index = self.index + 1
+                self.index += 1
             return final_cropList, final_coordlist, final_isnodlist, final_y
         else:
             for i in range(batch_size):
@@ -163,7 +171,7 @@ class TrainingClassifierData(DataSet):
                 else:
                     final_isnodlist = np.append(final_isnodlist, np.expand_dims(isnodlist, axis=0), axis=0)
 
-                self.index = self.index + 1
+                self.index += 1
             return final_cropList, final_coordlist, final_isnodlist
 
     def hasNextBatch(self):
@@ -179,4 +187,6 @@ if __name__ == "__main__":
                                      cfg.DIR.kaggle_full_labels,
                                      cfg.DIR.classifier_net_train_data_path
                                      , get_config())
-    dataset.__getitem__(0)
+    dataset.__getitem__(0, test=True)
+
+    #dataset.getNextBatch(1)

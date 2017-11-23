@@ -1,8 +1,8 @@
 import tensorflow as tf
-from Net.tensorflow_model.classifier_net import get_config, ClassiferNet
+from Net.tensorflow_model.classifier_net import get_config, ClassifierNet
 from Net.tensorflow_model.detector_net import DecetorNet
 
-class ClassiferNetLoss(object):
+class ClassifierNetLoss(object):
 
     def __init__(self, config):
         self.config = config
@@ -19,7 +19,7 @@ class ClassiferNetLoss(object):
 if __name__ == "__main__":
 
     config = get_config()
-    loss_object = ClassiferNetLoss(config=config)
+    loss_object = ClassifierNetLoss(config=config)
     topK = config['topk']
     labels = tf.placeholder(tf.float32, shape=[None, 1])
     isnod = tf.placeholder(tf.float32, shape=[None, topK])
@@ -29,9 +29,9 @@ if __name__ == "__main__":
 
     net1 = DecetorNet()
 
-    net2 = ClassiferNet(net1)
+    net2 = ClassifierNet(net1)
 
-    nodulePred, casePred, casePred_each = net2.getClassiferNet(X, coord)
+    nodulePred, casePred, casePred_each = net2.get_classifier_net(X, coord)
     print(loss_object.getLoss(casePred, casePred_each, labels, isnod, batch_size, topK))
 
 

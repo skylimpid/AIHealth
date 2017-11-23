@@ -2,6 +2,7 @@ import numpy as np
 import os
 import shutil
 from Utils.utils import nms, iou
+#from Utils.nms_cython import nms, iou
 from Training.configuration_training import cfg
 from Net.tensorflow_model.classifier_net import get_config
 
@@ -24,7 +25,8 @@ def main(config, split, bboxpath):
         print(idx)
         pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
         pbb = pbb[pbb[:, 0] > config['conf_th']]
-        pbb = nms(pbb, config['nms_th'], config['topk']*1000)
+        #pbb = nms(pbb, config['nms_th'], config['topk']*1000)
+        pbb = nms(pbb, config['nms_th'])
         lbb = np.load(os.path.join(bboxpath, idx + '_lbb.npy'))
         pbb_label = []
         for p in pbb:

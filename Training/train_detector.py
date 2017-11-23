@@ -696,5 +696,5 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        instance.train(sess, continue_training=False)
+        instance.train(sess, continue_training=True)
         #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)

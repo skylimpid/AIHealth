@@ -56,10 +56,11 @@ class TrainingClassifierData(DataSet):
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
         img = np.load(self.filenames[idx])
         fileName = self.filenames[idx].split('/')[-1].split('_')[0]
+        print(self.candidate_box[fileName])
         pbb = np.load(self.candidate_box[fileName])
-        #print(pbb.shape)
+        print("shape1", pbb.shape)
         pbb = np.squeeze(pbb)
-        #print(pbb.shape)
+        print("shape2", pbb.shape)
         pbb_label = np.load(self.pbb_label[fileName])
         pbb_label = np.squeeze(pbb_label)
         #print(pbb_label.shape)

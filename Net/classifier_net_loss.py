@@ -28,12 +28,9 @@ if __name__ == "__main__":
     coord = tf.placeholder(tf.float32, shape=[None, topK, 3, 24, 24, 24])
 
     net1 = DetectorNet()
-
     net2 = ClassifierNet(net1)
-
     nodulePred, casePred, casePred_each = net2.get_classifier_net(X, coord)
     print(loss_object.getLoss(casePred, casePred_each, labels, isnod, batch_size, topK))
-
 
     with tf.Session() as sess:
         labels = tf.random_uniform(shape=[100,1])

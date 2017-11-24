@@ -70,6 +70,7 @@ __C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifier_inter
 
 # HyperParameters for Training.
 # Refer to: https://towardsdatascience.com/learning-rate-schedules-and-adaptive-learning-rate-methods-for-deep-learning-2c8f433990d1
+# config mainly for detector
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.1
 __C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
@@ -81,6 +82,19 @@ __C.TRAIN.EPOCHS = 100
 __C.TRAIN.SAVE_STEPS = 25
 __C.TRAIN.DATA_SPLIT_RATIO = 0.2
 __C.TRAIN.VALIDATE_EPOCHES = 50
+
+# config mainly for classifier
+__C.TRAIN_CL = edict()
+__C.TRAIN_CL.LEARNING_RATE = 0.1
+__C.TRAIN_CL.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN_CL.LEARNING_RATE_DECAY_RATE = 0.95
+__C.TRAIN_CL.MOMENTUM = 0.8
+__C.TRAIN_CL.DISPLAY_STEPS = 10
+__C.TRAIN_CL.BATCH_SIZE = 2
+__C.TRAIN_CL.EPOCHS = 100
+__C.TRAIN_CL.SAVE_STEPS = 25
+__C.TRAIN_CL.DATA_SPLIT_RATIO = 0.2
+__C.TRAIN_CL.VALIDATE_EPOCHES = 50
 
 
 # Configurations for Testing

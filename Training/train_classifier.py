@@ -57,16 +57,19 @@ class ClassifierTrainer(object):
         start_time = time.time()
         tf.get_default_graph().finalize()
 
-        for epoch in range(1, self.cfg.TRAIN.EPOCHS+1):
+        for epoch in range(1, self.cfg.TRAIN_CL.EPOCHS+1):
 
             batch_count = 0
             total_loss = 0
             total_accuracy = 0
             while dataset.hasNextBatch():
 
-                batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
+                batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN_CL.BATCH_SIZE)
+                #print("batch_isnode shape: ", batch_isnode.shape)
+                #print("batch_labels shape: ", batch_labels.shape)
+                batch_labels = batch_labels.reshape((-1, 1))
 
-                _, loss, accuracy_op = sess.run([self.loss_1_optimizer, self.loss, self.accuracy],
+                _, loss, accuracy_op = sess.run([self.loss_optimizer, self.loss, self.accuracy],
                                                 feed_dict={self.X: batch_data,
                                                            self.coord: batch_coord,
                                                            self.labels: batch_labels,
@@ -76,7 +79,7 @@ class ClassifierTrainer(object):
                 total_loss += loss
                 total_accuracy += accuracy_op
 
-                if batch_count % self.cfg.TRAIN.DISPLAY_STEPS:
+                if batch_count % self.cfg.TRAIN_CL.DISPLAY_STEPS:
                     print("Current batch: %d, loss: %f, accuracy: %f" % (batch_count, loss, accuracy_op))
 
             print("Epoch %d finished in loss: %f and accuracy: %f" % (epoch, total_loss/batch_count, total_accuracy/batch_count))
@@ -87,7 +90,7 @@ class ClassifierTrainer(object):
             writer.add_summary(average_loss_str, epoch)
             writer.add_summary(average_accuracy_str, epoch)
             dataset.reset()
-            if epoch % self.cfg.TRAIN.SAVE_STEPS == 0:
+            if epoch % self.cfg.TRAIN_CL.SAVE_STEPS == 0:
                 filename = self.cfg.DIR.classifier_net_saver_file_prefix + '{:d}'.format(epoch)
                 filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=epoch)
@@ -114,14 +117,17 @@ class ClassifierTrainer(object):
 
         loss_object = ClassifierNetLoss(self.net_config)
 
-        self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN.BATCH_SIZE, topK)
+        self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN_CL.BATCH_SIZE, topK)
 
         global_step = tf.Variable(0, trainable=False, name="classifier_global_step")
 
-        lr = tf.train.exponential_decay(self.cfg.TRAIN.LEARNING_RATE, global_step,
-                                        self.cfg.TRAIN.LEARNING_RATE_STEP_SIZE, 0.1, staircase=True)
+        lr = tf.train.exponential_decay(self.cfg.TRAIN_CL.LEARNING_RATE,
+                                        global_step,
+                                        self.cfg.TRAIN_CL.LEARNING_RATE_STEP_SIZE,
+                                        self.cfg.TRAIN_CL.LEARNING_RATE_DECAY_RATE,
+                                        staircase=True)
 
-        self.loss_1_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN.MOMENTUM).minimize(
+        self.loss_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN_CL.MOMENTUM).minimize(
             self.loss, global_step=global_step)
 
         correct_predict = tf.equal(self.labels[:,0], tf.cast(casePred >= 0.5, tf.float32))
@@ -154,7 +160,10 @@ if __name__ == "__main__":
                 variables_to_restore.append(v)
         return variables_to_restore
 
-    with tf.Session() as sess:
+
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config) as sess:
         detectorNet = DetectorNet()
         instance = ClassifierTrainer(cfg, detectorNet)
         variables = tf.global_variables()
@@ -163,5 +172,6 @@ if __name__ == "__main__":
         # var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
         # restorer = tf.train.Saver(var_detector)
         # restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+
         instance.train(sess)
 

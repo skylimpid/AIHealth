@@ -33,19 +33,15 @@ class TrainingClassifierData(DataSet):
         for f in os.listdir(cfg.DIR.classifier_net_intermediate_pbb_label):
             name = f.split('_')[0]
             self.pbb_label[name] = os.path.join(cfg.DIR.classifier_net_intermediate_pbb_label, f)
-        #print(self.pbb_label)
+
         idcs = np.load(split)
 
-        # print(idcs)
         self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in idcs]
-        # print(self.filenames)
         if phase != 'test':
             self.yset = {}
             labels = np.array(pandas.read_csv(labelfile))
             for i in range(len(labels)):
                 self.yset[labels[i][0]] = labels[i][1]
-        # idcs = [f.split('-')[0] for f in idcs]
-        # print (idcs)
 
         self.crop = simpleCrop(config, phase)
         self.index = 0
@@ -55,22 +51,17 @@ class TrainingClassifierData(DataSet):
         t = time.time()
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
         img = np.load(self.filenames[idx])
-        fileName = self.filenames[idx].split('/')[-1].split('_')[0]
+        file_name = self.filenames[idx].split('/')[-1].split('_')[0]
 
         if test:
-            print(self.candidate_box[fileName])
+            print(self.candidate_box[file_name])
 
-        pbb = np.load(self.candidate_box[fileName])
+        pbb = np.load(self.candidate_box[file_name])
 
         if test:
             print("pbb shape: {}, ndim: {}, len: {}".format(pbb.shape, pbb.ndim, len(pbb)))
 
-        pbb = np.squeeze(pbb, axis=0)
-        if test:
-            print("pbb squeezed shape: ", pbb.shape)
-
-        pbb_label = np.load(self.pbb_label[fileName])
-        pbb_label = np.squeeze(pbb_label, axis=0)
+        pbb_label = np.load(self.pbb_label[file_name])
         if test:
             print("pbb_label shape: ", pbb_label.shape)
 
@@ -89,11 +80,8 @@ class TrainingClassifierData(DataSet):
         isnodlist = np.zeros([topk])
 
         for i, id in enumerate(chosenid):
-            #print(id)
             target = pbb[id, 1:]
-            #print(target)
             isnod = pbb_label[id]
-            #print(isnod)
             crop, coord = self.crop(img, target)
             if self.phase == 'train':
                 crop, coord = ClassifierDataAugment(crop, coord,
@@ -105,7 +93,7 @@ class TrainingClassifierData(DataSet):
             isnodlist[i] = isnod
 
         if self.phase != 'test':
-            y = np.array([self.yset[fileName]])
+            y = np.array([self.yset[file_name]])
             return croplist, coordlist, isnodlist, y
         else:
             return croplist, coordlist, isnodlist
@@ -124,8 +112,10 @@ class TrainingClassifierData(DataSet):
 
         if self.phase != 'test':
             for i in range(batch_size):
-                if self.index >= self.length:
+
+                if not self.hasNextBatch():
                     break
+
                 croplist, coordlist, isnodlist, y = self.__getitem__(self.index)
 
                 if final_cropList is None:
@@ -151,6 +141,7 @@ class TrainingClassifierData(DataSet):
                     final_y = np.append(final_y, y, axis=0)
 
                 self.index += 1
+
             return final_cropList, final_coordlist, final_isnodlist, final_y
         else:
             for i in range(batch_size):
@@ -188,8 +179,8 @@ if __name__ == "__main__":
     dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path, cfg.DIR.bbox_path,
                                      cfg.DIR.kaggle_full_labels,
                                      cfg.DIR.classifier_net_train_data_path
-                                     , get_config())
+                                     , get_config(), phase = "train")
 
-    dataset.__getitem__(1, test=True)
+    dataset.__getitem__(108, test=True)
 
-    #dataset.getNextBatch(1)
+    dataset.getNextBatch(5)

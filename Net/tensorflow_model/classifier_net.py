@@ -83,18 +83,18 @@ class ClassifierNet(object):
             # print(dense1.shape)
             dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_layer_2")
             out = tf.reshape(dense2, (-1, xsize[1]))
-            print(out.shape)
+            #print(out.shape)
             baseline = tf.constant(value=-30.0, dtype=tf.float32)
             base_prob = tf.nn.sigmoid(baseline)
             # print(base_prob.shape)
             # print(base_prob)
             casePred = 1-tf.reduce_prod(1-out, axis=-1, keep_dims = True)*(1-base_prob)
-            print(casePred.shape)
+            #print(casePred.shape)
             return nodulePred, casePred, out
 
 
-def get_model(trained_detectorNet):
-    net = ClassifierNet(trained_detectorNet)
+def get_model(trained_detector_net):
+    net = ClassifierNet(trained_detector_net)
     return config, net
 
 

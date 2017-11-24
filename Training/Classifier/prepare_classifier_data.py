@@ -19,8 +19,6 @@ def main(config, split, bboxpath):
     os.makedirs(cfg.DIR.classifier_net_intermediate_pbb_label)
 
     idcs = np.load(split)
-    candidate_box = []
-    pbb_label_total = []
     for idx in idcs.tolist():
         print(idx)
         pbb = np.load(os.path.join(bboxpath, idx + '_pbb.npy'))
@@ -37,13 +35,11 @@ def main(config, split, bboxpath):
                     isnod = True
                     break
             pbb_label.append(isnod)
-        candidate_box.append(pbb)
-        pbb_label_total.append(np.array(pbb_label))
+        pbb_label = np.array(pbb_label)
         candidate_box_file = os.path.join(cfg.DIR.classifier_net_intermediate_candidate_box, idx + "_candidate.npy")
         pbb_file = os.path.join(cfg.DIR.classifier_net_intermediate_pbb_label, idx + "_pbb.npy")
-        np.save(candidate_box_file, candidate_box)
-        np.save(pbb_file, pbb_label_total)
-
+        np.save(candidate_box_file, pbb)
+        np.save(pbb_file, pbb_label)
 
 
 if __name__ == "__main__":

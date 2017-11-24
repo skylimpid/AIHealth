@@ -7,7 +7,7 @@ class DetectorNetLoss():
 
     def getLoss(self, output, labels, batch_size):
         output = tf.reshape(output, shape=(-1, 5))
-        labels = tf.reshape(labels, shape= (-1, 5))
+        labels = tf.reshape(labels, shape=(-1, 5))
 
 
         pos_idcs = labels[:, 0] > 0.5

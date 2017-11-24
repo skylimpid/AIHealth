@@ -46,8 +46,6 @@ class GetPBB(object):
         else:
             return output
 
-            # output = output[output[:, 0] >= self.conf_th]
-            # bboxes = nms(output, self.nms_th)
 
 def nms(output, nms_th, valid_size=None):
     if len(output) == 0:

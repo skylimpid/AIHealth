@@ -27,7 +27,7 @@ class TrainingDetectorData(DataSet):
         idcs = np.load(split_path)
         if phase != 'test':
             idcs = [f for f in idcs if (f not in self.blacklist)]
-        #print("test:{}".format(idcs))
+
         self.filenames = [os.path.join(data_dir, '%s_clean.npy' % idx) for idx in idcs]
 
         labels = []
@@ -37,12 +37,10 @@ class TrainingDetectorData(DataSet):
             if np.all(l == 0):
                 l = np.array([])
             labels.append(l)
-        #print("labels:{}".format(labels))
 
         # Keep the original copy
         self.sample_bboxes = labels
 
-        ##
         ## Filter bounding boxes, and also increase the presence for big ones
         if self.phase != 'test':
             self.bboxes = []
@@ -93,7 +91,7 @@ class TrainingDetectorData(DataSet):
             if not isRandomImg:
                 bbox = self.bboxes[idx]
                 filename = self.filenames[int(bbox[0])]
-                # print(filename)
+
                 imgs = np.load(filename)
                 ## bboxes from the same patient
                 bboxes = self.sample_bboxes[int(bbox[0])]
@@ -212,20 +210,20 @@ class TrainingDetectorData(DataSet):
 
         if len(self.sample_pool) >= batch_size:
             samples = np.copy(self.sample_pool[0:batch_size])
-            labels_out = np.copy(self.label_pool[0:batch_size])
-            coords_out = np.copy(self.coord_pool[0:batch_size])
+            labels = np.copy(self.label_pool[0:batch_size])
+            coords = np.copy(self.coord_pool[0:batch_size])
             self.sample_pool = self.sample_pool[batch_size:]
             self.label_pool = self.label_pool[batch_size:]
             self.coord_pool = self.coord_pool[batch_size:]
-            return samples, labels_out, coords_out
+            return samples, labels, coords
         else:
             samples = np.copy(self.sample_pool)
-            labels_out = np.copy(self.label_pool)
-            coords_out = np.copy(self.coord_pool)
+            labels = np.copy(self.label_pool)
+            coords = np.copy(self.coord_pool)
             self.sample_pool = None
             self.label_pool = None
             self.coord_pool= None
-            return samples, labels_out, coords_out
+            return samples, labels, coords
 
     def hasNextBatch(self):
         return self.index < self.length or (self.sample_pool is not None and len(self.sample_pool) > 0)
@@ -235,12 +233,17 @@ class TrainingDetectorData(DataSet):
         if self.shuffle:
             np.random.shuffle(self.shuffled_idx)
 
-
+###
+# Test results:
+# after disabling scale and random and making sure to get the same batch for the same crop size, and
+# there is no rotate/swap/flip, but
+# [128, 128, 128] and [96, 96, 96] cannot return the same data set even for the first independent batch
+###
 def testBatchData():
     from Net.tensorflow_model.detector_net import get_model
 
     config128, net, loss, get_pbb = get_model()
-    config128['crop_size'] = [96, 96, 96]
+    config128['crop_size'] = [128, 128, 128]
     from Training.configuration_training import cfg
     data_set1 = TrainingDetectorData(cfg.DIR.preprocess_result_path,
                                     cfg.DIR.detector_net_train_data_path,
@@ -256,7 +259,7 @@ def testBatchData():
                                     phase='train',
                                     shuffle=False)
 
-    batch_size = 1
+    batch_size = 5
     print("Fatching batch data")
     batch_data1, batch_labels1, batch_coord1 = data_set1.getNextBatch(batch_size)
     batch_data2, batch_labels2, batch_coord2 = data_set2.getNextBatch(batch_size)

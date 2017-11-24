@@ -100,7 +100,7 @@ class ClassifierTrainer(object):
         saver.save(sess, filename)
         end_time = time.time()
 
-        print("The total time used in training: {}".format(end_time-start_time))
+        print("The total time used in training: {}".format(end_time - start_time))
 
     def build_model(self):
 
@@ -164,8 +164,8 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        detectorNet = DetectorNet()
-        instance = ClassifierTrainer(cfg, detectorNet)
+        detector_net = DetectorNet()
+        instance = ClassifierTrainer(cfg, detector_net)
         variables = tf.global_variables()
         var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
         restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))

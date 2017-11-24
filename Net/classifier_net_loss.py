@@ -12,7 +12,7 @@ class ClassifierNetLoss(object):
         loss2 = tf.reduce_mean(-tf.reduce_sum(labels[:, 0] * tf.log(output), reduction_indices=[1]))
         missMask = tf.cast(output_each<self.config['miss_thresh'], dtype=tf.float32)
         missLoss = -tf.reduce_sum(missMask*isnod*tf.log(output_each+0.001))/batch_size/k_size
-        return loss2+self.config['miss_ratio']*missLoss
+        return loss2 + self.config['miss_ratio'] * missLoss
 
 
 
@@ -38,4 +38,5 @@ if __name__ == "__main__":
         output = tf.random_uniform(shape=[100,1])
         output_each = tf.random_uniform(shape=[100,topK])
 
-        sess.run(loss_object.getLoss(output, output_each, labels, isnod, batch_size, topK))
+        loss = sess.run(loss_object.getLoss(output, output_each, labels, isnod, batch_size, topK))
+        print("loss: ", loss)

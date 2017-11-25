@@ -170,7 +170,7 @@ class DetectorTrainer(object):
         sess.run(tf.global_variables_initializer())
         # load the previous trained detector_net model
         value_list = []
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
         saver = tf.train.Saver(value_list, max_to_keep=100)
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
         # get input data
@@ -300,7 +300,7 @@ class DetectorTrainer(object):
         sess.run(tf.global_variables_initializer())
         # load the previous trained detector_net model
         value_list = []
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
         saver = tf.train.Saver(value_list, max_to_keep=100)
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 

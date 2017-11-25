@@ -73,7 +73,7 @@ __C.DIR.classifier_net_intermediate_pbb_label = DATA_BASE_DIR +"classifier_inter
 # config mainly for detector
 __C.TRAIN = edict()
 __C.TRAIN.LEARNING_RATE = 0.1
-__C.TRAIN.LEARNING_RATE_STEP_SIZE = 2000
+__C.TRAIN.LEARNING_RATE_STEP_SIZE = 1000
 __C.TRAIN.LEARNING_RATE_DECAY_RATE = 0.95
 __C.TRAIN.MOMENTUM = 0.8
 __C.TRAIN.DISPLAY_STEPS = 10

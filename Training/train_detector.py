@@ -26,10 +26,10 @@ class DetectorTrainer(object):
         self.build_model()
 
         self.validate_average_iou_holder = tf.placeholder(tf.float32)
-        self.validate_average_iou_tensor = tf.summary.scalar("validate_average_iou", self.validate_average_iou_holder)
+        self.validate_average_iou_tensor = tf.summary.scalar("val_avg_iou", self.validate_average_iou_holder)
 
         self.validate_nodule_predict_ratio_holder = tf.placeholder(tf.float32)
-        self.validate_nodule_predict_ratio_tensor = tf.summary.scalar("validate_average_nodule_predict_ratio",
+        self.validate_nodule_predict_ratio_tensor = tf.summary.scalar("val_avg_nodule_predict_ratio",
                                                                       self.validate_nodule_predict_ratio_holder)
 
     # Detect if the provided tensor 'labels' contains +1 labels.
@@ -78,12 +78,12 @@ class DetectorTrainer(object):
         # load previous saved weights if we enable the continue_training
         if continue_training:
             value_list = []
-            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
             restore = tf.train.Saver(value_list)
             restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 
         average_loss_holder = tf.placeholder(tf.float32)
-        average_loss_tensor = tf.summary.scalar("average_loss", average_loss_holder)
+        average_loss_tensor = tf.summary.scalar("avg_loss", average_loss_holder)
 
         cur_loss_holder = tf.placeholder(tf.float32)
         cur_loss_tensor = tf.summary.scalar("cur_loss", cur_loss_holder)
@@ -221,12 +221,12 @@ class DetectorTrainer(object):
         # load previous saved weights if we enable the continue_training
         if continue_training:
             value_list = []
-            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
             restore = tf.train.Saver(value_list)
             restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 
         average_loss_holder = tf.placeholder(tf.float32)
-        average_loss_tensor = tf.summary.scalar("average_loss", average_loss_holder)
+        average_loss_tensor = tf.summary.scalar("avg_loss", average_loss_holder)
 
         cur_loss_holder = tf.placeholder(tf.float32)
         cur_loss_tensor = tf.summary.scalar("cur_loss", cur_loss_holder)
@@ -373,7 +373,7 @@ class DetectorTrainer(object):
          self.reg_loss_4,
          self.classify_loss] = loss_object.getLoss(self.out, self.labels)
 
-        tf.summary.histogram("Predicted bbox", self.out)
+        tf.summary.histogram("Pred_bbox", self.out)
         tf.summary.histogram("Feature", self.feat)
 
         # TODO: figure out why we got NAN for conv1
@@ -390,7 +390,7 @@ class DetectorTrainer(object):
         tf.summary.scalar("Reg Loss 2", self.reg_loss_2)
         tf.summary.scalar("Reg Loss 3", self.reg_loss_3)
         tf.summary.scalar("Reg Loss 4", self.reg_loss_4)
-        tf.summary.scalar("Classify Loss", self.classify_loss)
+        tf.summary.scalar("Cl Loss", self.classify_loss)
 
         global_step = tf.Variable(0, trainable=False)
 
@@ -434,7 +434,7 @@ class DetectorTrainer(object):
          self.classify_loss_without_pos_with_hard_mining] = loss_object.getLoss(self.out, self.labels,
                                                                                 self.cfg.TRAIN.BATCH_SIZE)
 
-        tf.summary.histogram("Predicted bbox", self.out)
+        tf.summary.histogram("Pred_bbox", self.out)
         tf.summary.histogram("Feature", self.feat)
 
         # TODO: figure out why we got NAN for conv1
@@ -632,7 +632,7 @@ class DetectorTrainer(object):
         sess.run(tf.global_variables_initializer())
         # load the previous trained detector_net model
         value_list = []
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
         saver = tf.train.Saver(value_list, max_to_keep=100)
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 

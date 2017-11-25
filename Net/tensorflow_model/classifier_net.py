@@ -13,8 +13,8 @@ config['preload_val'] = True
 config['padmask'] = False
 
 config['crop_size'] = [DIMEN_X, DIMEN_X, DIMEN_X]
-config['scaleLim'] = [0.85,1.15]
-config['radiusLim'] = [6,100]
+config['scaleLim'] = [0.85, 1.15]
+config['radiusLim'] = [6, 100]
 config['jitter_range'] = 0.15
 config['isScale'] = True
 
@@ -30,8 +30,8 @@ config['nms_th'] = 0.05
 config['filling_value'] = 160
 
 config['startepoch'] = 20
-config['lr_stage'] = np.array([50,100,140,160,180])
-config['lr'] = [0.01,0.001,0.0001,0.00001,0.000001]
+config['lr_stage'] = np.array([50, 100, 140, 160, 180])
+config['lr'] = [0.01, 0.001, 0.0001, 0.00001, 0.000001]
 config['miss_ratio'] = 1
 config['miss_thresh'] = 0.03
 
@@ -52,14 +52,15 @@ class ClassifierNet(object):
 
     def get_classifier_net(self, X, coord):
         xsize = X.get_shape().as_list()
-        X = tf.reshape(X, (-1, self.img_channel, self.img_row, self.img_col, self.img_depth))
-        # print(X.shape)
+        # batch, depth, height, width, channels)
+        X = tf.reshape(X, (-1, self.img_channel, self.img_depth, self.img_row, self.img_col))
+
         coordsize = coord.get_shape().as_list()
-        # print(coordsize)
+
         coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
         _,_,_,_,_,_,_,_,noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
 
-        with tf.variable_scope('global/classifier_scope'):
+        with tf.variable_scope('global/cl_scope'):
             nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))
 
             featshape = noduleFeat.get_shape().as_list()
@@ -70,18 +71,18 @@ class ClassifierNet(object):
                          int(featshape[3] / 2 - 1):int(featshape[3] / 2 + 1),
                          int(featshape[4] / 2 - 1):int(featshape[4] / 2 + 1)]
             # print(centerFeat.shape)
-            centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="valid",
+            centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="same",
                                                  data_format=self.DATA_FORMAT,
-                                                 name="center_feature_from_nodule_feature")
+                                                 name="pool_cent_feat")
             # print(centerFeat.shape)
 
             centerFeat = centerFeat[:, :, 0, 0, 0]
             # print(centerFeat.shape)
-            out = tf.layers.dropout(centerFeat, rate=0.5, name="drop_out_after_center_feature")
+            out = tf.layers.dropout(centerFeat, rate=0.5, name="dropout_after_cent_feat")
             # print(out.shape)
-            dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu, name="dense_layer_1")
+            dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu, name="dense_1")
             # print(dense1.shape)
-            dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_layer_2")
+            dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_2")
             out = tf.reshape(dense2, (-1, xsize[1]))
             #print(out.shape)
             baseline = tf.constant(value=-30.0, dtype=tf.float32)

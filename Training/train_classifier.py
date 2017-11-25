@@ -31,10 +31,10 @@ class ClassifierTrainer(object):
         sess.run(tf.global_variables_initializer())
 
         average_loss_holder = tf.placeholder(tf.float32)
-        average_loss_tensor = tf.summary.scalar("training_loss", average_loss_holder)
+        average_loss_tensor = tf.summary.scalar("cl_loss", average_loss_holder)
 
         average_accuracy_holder = tf.placeholder(tf.float32)
-        average_accuracy_tensor = tf.summary.scalar("training_accuracy", average_accuracy_holder)
+        average_accuracy_tensor = tf.summary.scalar("cl_accuracy", average_accuracy_holder)
 
         writer = tf.summary.FileWriter(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
         writer.add_graph(sess.graph)
@@ -44,7 +44,7 @@ class ClassifierTrainer(object):
         if not os.path.exists(cfg.DIR.classifier_net_saver_dir):
             os.makedirs(cfg.DIR.classifier_net_saver_dir)
 
-        var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/classifier_scope')
+        var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope')
         sess.run(tf.variables_initializer(var_classifier))
 
         dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
@@ -119,7 +119,7 @@ class ClassifierTrainer(object):
 
         self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN_CL.BATCH_SIZE, topK)
 
-        global_step = tf.Variable(0, trainable=False, name="classifier_global_step")
+        global_step = tf.Variable(0, trainable=False, name="cl_global_step")
 
         lr = tf.train.exponential_decay(self.cfg.TRAIN_CL.LEARNING_RATE,
                                         global_step,
@@ -127,8 +127,10 @@ class ClassifierTrainer(object):
                                         self.cfg.TRAIN_CL.LEARNING_RATE_DECAY_RATE,
                                         staircase=True)
 
-        self.loss_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN_CL.MOMENTUM).minimize(
-            self.loss, global_step=global_step)
+        #self.loss_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN_CL.MOMENTUM).minimize(
+        #    self.loss, global_step=global_step)
+
+        self.loss_optimizer = tf.train.AdadeltaOptimizer(learning_rate=lr).minimize(self.loss, global_step=global_step)
 
         correct_predict = tf.equal(self.labels[:,0], tf.cast(casePred >= 0.5, tf.float32))
         self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))

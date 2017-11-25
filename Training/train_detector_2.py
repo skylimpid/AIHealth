@@ -27,10 +27,10 @@ class DetectorTrainer(object):
         self.build_model()
 
         self.validate_average_iou_holder = tf.placeholder(tf.float32)
-        self.validate_average_iou_tensor = tf.summary.scalar("validate_average_iou", self.validate_average_iou_holder)
+        self.validate_average_iou_tensor = tf.summary.scalar("val_avg_iou", self.validate_average_iou_holder)
 
         self.validate_nodule_predict_ratio_holder = tf.placeholder(tf.float32)
-        self.validate_nodule_predict_ratio_tensor = tf.summary.scalar("validate_average_nodule_predict_ratio",
+        self.validate_nodule_predict_ratio_tensor = tf.summary.scalar("val_avg_nodule_predict_ratio",
                                                                       self.validate_nodule_predict_ratio_holder)
 
     # Detect if the provided tensor 'labels' contains +1 labels.
@@ -62,7 +62,7 @@ class DetectorTrainer(object):
             restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 
         average_loss_holder = tf.placeholder(tf.float32)
-        average_loss_tensor = tf.summary.scalar("average_loss", average_loss_holder)
+        average_loss_tensor = tf.summary.scalar("avg_loss", average_loss_holder)
 
         cur_loss_holder = tf.placeholder(tf.float32)
         cur_loss_tensor = tf.summary.scalar("cur_loss", cur_loss_holder)
@@ -156,7 +156,7 @@ class DetectorTrainer(object):
 
         self.loss = loss_object.getLoss(self.out, self.labels, self.condition)
 
-        tf.summary.histogram("Predicted bbox", self.out)
+        tf.summary.histogram("Pred_bbox", self.out)
         tf.summary.histogram("Feature", self.feat)
 
         for key, value in self.detector_net_object.layers.items():
@@ -170,7 +170,7 @@ class DetectorTrainer(object):
         sess.run(tf.global_variables_initializer())
         # load the previous trained detector_net model
         value_list = []
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
         saver = tf.train.Saver(value_list, max_to_keep=100)
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
         # get input data
@@ -300,7 +300,7 @@ class DetectorTrainer(object):
         sess.run(tf.global_variables_initializer())
         # load the previous trained detector_net model
         value_list = []
-        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/det_scope'))
         saver = tf.train.Saver(value_list, max_to_keep=100)
         saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.detector_net_saver_dir))
 

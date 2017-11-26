@@ -28,7 +28,7 @@ class ClassifierTrainer(object):
             if os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
                 shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
 
-        sess.run(tf.global_variables_initializer())
+        #sess.run(tf.global_variables_initializer())
 
         average_loss_holder = tf.placeholder(tf.float32)
         average_loss_tensor = tf.summary.scalar("training_loss", average_loss_holder)
@@ -66,10 +66,18 @@ class ClassifierTrainer(object):
 
                 batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN_CL.BATCH_SIZE)
                 #print("batch_isnode shape: ", batch_isnode.shape)
-                #print("batch_labels shape: ", batch_labels.shape)
-                batch_labels = batch_labels.reshape((-1, 1))
+                print("batch_labels : ", batch_labels)
+                # batch_labels = batch_labels.reshape((-1, 1))
+                #print(batch_data.shape)
 
-                _, loss, accuracy_op = sess.run([self.loss_optimizer, self.loss, self.accuracy],
+                _, loss, accuracy_op, loss2, miss_loss, case_pred, case_pred_each, miss_mask, center_feat = sess.run([self.loss_optimizer, self.loss, self.accuracy,
+                                                 self.loss2,
+                                                 self.miss_loss,
+                                                 self.casePred,
+                                                 self.casePred_each,
+                                                 self.miss_mask,
+                                                 self.center_feat
+                                                                    ],
                                                 feed_dict={self.X: batch_data,
                                                            self.coord: batch_coord,
                                                            self.labels: batch_labels,
@@ -80,6 +88,13 @@ class ClassifierTrainer(object):
                 total_accuracy += accuracy_op
 
                 if batch_count % self.cfg.TRAIN_CL.DISPLAY_STEPS:
+                    # print("batch_labels:", batch_labels)
+                    # print(loss2, miss_loss)
+                    print("case_pred: ", case_pred)
+                    print("case_pred_each: ", case_pred_each)
+                    # print("miss mask: ", miss_mask)
+                    # print("batch_is_nod: ", batch_isnode)
+                    print("center_feat: ", center_feat)
                     print("Current batch: %d, loss: %f, accuracy: %f" % (batch_count, loss, accuracy_op))
 
             print("Epoch %d finished in loss: %f and accuracy: %f" % (epoch, total_loss/batch_count, total_accuracy/batch_count))
@@ -113,11 +128,12 @@ class ClassifierTrainer(object):
         self.labels = tf.placeholder(tf.float32, shape=[None, 1])
         self.isnod = tf.placeholder(tf.float32, shape=[None, topK])
 
-        nodulePred, casePred, casePred_each = classifier_net_object.get_classifier_net(self.X, self.coord)
+        self.nodulePred, self.casePred, self.casePred_each, self.center_feat = classifier_net_object.get_classifier_net(self.X, self.coord)
+
 
         loss_object = ClassifierNetLoss(self.net_config)
 
-        self.loss = loss_object.getLoss(casePred, casePred_each, self.labels, self.isnod, self.cfg.TRAIN_CL.BATCH_SIZE, topK)
+        self.loss, self.loss2, self.miss_loss, self.miss_mask = loss_object.getLoss(self.casePred, self.casePred_each, self.labels, self.isnod, self.cfg.TRAIN_CL.BATCH_SIZE, topK)
 
         global_step = tf.Variable(0, trainable=False, name="classifier_global_step")
 
@@ -130,7 +146,7 @@ class ClassifierTrainer(object):
         self.loss_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN_CL.MOMENTUM).minimize(
             self.loss, global_step=global_step)
 
-        correct_predict = tf.equal(self.labels[:,0], tf.cast(casePred >= 0.5, tf.float32))
+        correct_predict = tf.equal(self.labels[:,0], tf.cast(self.casePred >= 0.5, tf.float32))
         self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))
 
     def test(self):
@@ -166,12 +182,13 @@ if __name__ == "__main__":
     with tf.Session(config=config) as sess:
         detector_net = DetectorNet()
         instance = ClassifierTrainer(cfg, detector_net)
+        sess.run(tf.global_variables_initializer())
         variables = tf.global_variables()
         var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
         restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
         # var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
         # restorer = tf.train.Saver(var_detector)
-        # restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+        restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
 
         instance.train(sess)
 

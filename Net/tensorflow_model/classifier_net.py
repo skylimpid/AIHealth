@@ -18,11 +18,11 @@ config['radiusLim'] = [6,100]
 config['jitter_range'] = 0.15
 config['isScale'] = True
 
-config['random_sample'] = True
+config['random_sample'] = False
 config['T'] = 1
 config['topk'] = 5
 config['stride'] = 4
-config['augtype'] = {'flip': True, 'swap': True, 'rotate': True, 'scale': True}
+config['augtype'] = {'flip': False, 'swap': False, 'rotate': False, 'scale': False}
 
 config['detect_th'] = 0.05
 config['conf_th'] = -1
@@ -32,7 +32,7 @@ config['filling_value'] = 160
 config['startepoch'] = 20
 config['lr_stage'] = np.array([50,100,140,160,180])
 config['lr'] = [0.01,0.001,0.0001,0.00001,0.000001]
-config['miss_ratio'] = 1
+config['miss_ratio'] = 0
 config['miss_thresh'] = 0.03
 
 
@@ -76,12 +76,13 @@ class ClassifierNet(object):
             # print(centerFeat.shape)
 
             centerFeat = centerFeat[:, :, 0, 0, 0]
-            # print(centerFeat.shape)
+            #print(centerFeat.shape)
             out = tf.layers.dropout(centerFeat, rate=0.5, name="drop_out_after_center_feature")
             # print(out.shape)
             dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu, name="dense_layer_1")
-            # print(dense1.shape)
+            #print(dense1.shape)
             dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_layer_2")
+            #print(dense2.shape)
             out = tf.reshape(dense2, (-1, xsize[1]))
             #print(out.shape)
             baseline = tf.constant(value=-30.0, dtype=tf.float32)
@@ -89,8 +90,8 @@ class ClassifierNet(object):
             # print(base_prob.shape)
             # print(base_prob)
             casePred = 1-tf.reduce_prod(1-out, axis=-1, keep_dims = True)*(1-base_prob)
-            #print(casePred.shape)
-            return nodulePred, casePred, out
+            print(casePred.shape)
+            return nodulePred, casePred, out, centerFeat
 
 
 def get_model(trained_detector_net):

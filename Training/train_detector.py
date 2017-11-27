@@ -688,7 +688,9 @@ class DetectorTrainer(object):
             output = split_combine.combine(final_out, nzhw=nzhw)
             thresh = -3
             pbb, mask = self.pbb(output, thresh, ismask=True)
+            # predicted boundary box
             np.save(os.path.join(save_dir, filename+'_pbb.npy'), pbb)
+            # original labeling box
             np.save(os.path.join(save_dir, filename+'_lbb.npy'), bboxes)
             end_time = time.time()
             print("finish the post-process for user:{} spend:{}".format(filename, end_time - start_time))

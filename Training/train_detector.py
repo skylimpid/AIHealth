@@ -260,6 +260,7 @@ class DetectorTrainer(object):
                 train_step += 1
                 loss_per_batch = 0
                 batch_data, batch_labels, batch_coord = data_set.getNextBatch(self.cfg.TRAIN.BATCH_SIZE)
+
                 if self.has_positive_in_label(batch_labels):
                     if self.has_negative_in_label(batch_labels):
                         if self.need_hard_mining(batch_labels, self.cfg.TRAIN.BATCH_SIZE * self.net_config['num_hard']):

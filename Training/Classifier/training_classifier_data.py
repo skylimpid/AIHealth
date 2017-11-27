@@ -51,7 +51,10 @@ class TrainingClassifierData(DataSet):
         t = time.time()
         np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
         img = np.load(self.filenames[idx])
+        print(self.filenames[idx])
         file_name = self.filenames[idx].split('/')[-1].split('_')[0]
+
+        print(file_name)
 
         if test:
             print(self.candidate_box[file_name])
@@ -87,7 +90,7 @@ class TrainingClassifierData(DataSet):
                 crop, coord = ClassifierDataAugment(crop, coord,
                                       ifflip=self.augtype['flip'], ifrotate=self.augtype['rotate'],
                                       ifswap=self.augtype['swap'])
-            crop = crop.astype(np.float32)
+            crop = (crop.astype(np.float32)-128)/128
             croplist[i] = crop
             coordlist[i] = coord
             isnodlist[i] = isnod
@@ -142,6 +145,7 @@ class TrainingClassifierData(DataSet):
 
                 self.index += 1
 
+            final_y = final_y.reshape((-1, 1))
             return final_cropList, final_coordlist, final_isnodlist, final_y
         else:
             for i in range(batch_size):
@@ -181,6 +185,12 @@ if __name__ == "__main__":
                                      cfg.DIR.classifier_net_train_data_path
                                      , get_config(), phase = "train")
 
-    dataset.__getitem__(108, test=True)
+    a, b, c, d = dataset.__getitem__(108, test=True)
 
-    dataset.getNextBatch(5)
+    print(a)
+    print(a.shape)
+    print(b.shape)
+    print(c.shape)
+    print(d.shape)
+
+    #dataset.getNextBatch(5)

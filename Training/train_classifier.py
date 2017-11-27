@@ -68,15 +68,17 @@ class ClassifierTrainer(object):
                 #print("batch_isnode shape: ", batch_isnode.shape)
                 print("batch_labels : ", batch_labels)
                 # batch_labels = batch_labels.reshape((-1, 1))
-                #print(batch_data.shape)
+                print("batch_data: ")
+                #print(batch_data)
 
-                _, loss, accuracy_op, loss2, miss_loss, case_pred, case_pred_each, miss_mask, center_feat = sess.run([self.loss_optimizer, self.loss, self.accuracy,
+                _, loss, accuracy_op, loss2, miss_loss, case_pred, case_pred_each, miss_mask, center_feat, nodule_feat = sess.run([self.loss_optimizer, self.loss, self.accuracy,
                                                  self.loss2,
                                                  self.miss_loss,
                                                  self.casePred,
                                                  self.casePred_each,
                                                  self.miss_mask,
-                                                 self.center_feat
+                                                 self.center_feat,
+                                                 self.nodule_feat
                                                                     ],
                                                 feed_dict={self.X: batch_data,
                                                            self.coord: batch_coord,
@@ -95,6 +97,7 @@ class ClassifierTrainer(object):
                     # print("miss mask: ", miss_mask)
                     # print("batch_is_nod: ", batch_isnode)
                     print("center_feat: ", center_feat)
+                    #print("nodule_feat: ", nodule_feat)
                     print("Current batch: %d, loss: %f, accuracy: %f" % (batch_count, loss, accuracy_op))
 
             print("Epoch %d finished in loss: %f and accuracy: %f" % (epoch, total_loss/batch_count, total_accuracy/batch_count))
@@ -128,7 +131,7 @@ class ClassifierTrainer(object):
         self.labels = tf.placeholder(tf.float32, shape=[None, 1])
         self.isnod = tf.placeholder(tf.float32, shape=[None, topK])
 
-        self.nodulePred, self.casePred, self.casePred_each, self.center_feat = classifier_net_object.get_classifier_net(self.X, self.coord)
+        self.nodulePred, self.casePred, self.casePred_each, self.center_feat, self.nodule_feat = classifier_net_object.get_classifier_net(self.X, self.coord)
 
 
         loss_object = ClassifierNetLoss(self.net_config)
@@ -174,14 +177,14 @@ if __name__ == "__main__":
         variables_to_restore = []
         for v in variables:
             if v.name.split(':')[0] in var_keep_dic:
-                print('Variables restored: %s' % v.name)
+                print('Variables to be restored: %s' % v.name)
                 variables_to_restore.append(v)
         return variables_to_restore
 
 
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    with tf.Session(config=config) as sess:
+    tf_config = tf.ConfigProto()
+    tf_config.gpu_options.allow_growth = True
+    with tf.Session(config=tf_config) as sess:
         detector_net = DetectorNet()
         instance = ClassifierTrainer(cfg, detector_net)
         sess.run(tf.global_variables_initializer())
@@ -190,7 +193,15 @@ if __name__ == "__main__":
         restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
         # var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
         # restorer = tf.train.Saver(var_detector)
+
+        # print("before restore:")
+        # print(tf.get_default_graph().get_tensor_by_name(
+        #    name='global/detector_scope/global/detector_scope/resBlock6/resBlock6-3_conv2_bn/gamma/Adadelta_1:0').eval())
+
         restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+
+        # print("after:")
+        # print(tf.get_default_graph().get_tensor_by_name(name='global/detector_scope/global/detector_scope/resBlock6/resBlock6-3_conv2_bn/gamma/Adadelta_1:0').eval())
 
         instance.train(sess)
 

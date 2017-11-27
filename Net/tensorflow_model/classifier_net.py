@@ -90,8 +90,8 @@ class ClassifierNet(object):
             # print(base_prob.shape)
             # print(base_prob)
             casePred = 1-tf.reduce_prod(1-out, axis=-1, keep_dims = True)*(1-base_prob)
-            print(casePred.shape)
-            return nodulePred, casePred, out, centerFeat
+            #print(casePred.shape)
+            return nodulePred, casePred, out, centerFeat, noduleFeat
 
 
 def get_model(trained_detector_net):

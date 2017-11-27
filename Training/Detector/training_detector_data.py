@@ -91,7 +91,6 @@ class TrainingDetectorData(DataSet):
             if not isRandomImg:
                 bbox = self.bboxes[idx]
                 filename = self.filenames[int(bbox[0])]
-
                 imgs = np.load(filename)
                 ## bboxes from the same patient
                 bboxes = self.sample_bboxes[int(bbox[0])]
@@ -316,18 +315,18 @@ if __name__ == "__main__":
                                     phase='train')
 
     data, labels, coords = data_set.__getitem__(0)
-    #print(data.shape)
+    print(data)
     #print(labels.shape)
     #print(coords.shape)
 
-    batch_cnt = 0
-    while data_set.hasNextBatch():
-        batch_data, batch_labels, batch_coord = data_set.getNextBatch(10)
-        print('Batch %d' % batch_cnt)
-        batch_cnt += 1
-        print(batch_labels.shape)
-        print(batch_data.shape)
-        print(batch_coord.shape)
+    # batch_cnt = 0
+    # while data_set.hasNextBatch():
+    #     batch_data, batch_labels, batch_coord = data_set.getNextBatch(10)
+    #     print('Batch %d' % batch_cnt)
+    #     batch_cnt += 1
+    #     print(batch_labels.shape)
+    #     print(batch_data.shape)
+    #     print(batch_coord.shape)
 
     #print(data_set.hasNextBatch())
 

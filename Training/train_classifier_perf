@@ -11,18 +11,20 @@ Error batch:
 
 Current batch: 1, loss: 3.388442, accuracy: 0.000000
 
+Current batch: 179, loss: 3.349727, accuracy: 0.000000
+
 Current batch: 467, loss: 7.157857, accuracy: 0.000000
 
 Current batch: 548, loss: 3.243133, accuracy: 0.000000
-Current batch: 548, loss: 3.288125, accuracy: 0.000000
+Current batch: 548, loss: 3.288125, accuracy: 0.000000 (another epoch)
 
 Current batch: 811, loss: -0.000000, accuracy: 1.000000
 
 Current batch: 894, loss: 3.614202, accuracy: 0.000000
-Current batch: 894, loss: 3.261748, accuracy: 0.000000
+Current batch: 894, loss: 3.261748, accuracy: 0.000000 (another epoch)
 
 Current batch: 1187, loss: 10.717251, accuracy: 0.000000
-Current batch: 1187, loss: 5.591015, accuracy: 0.000000 (next)
+Current batch: 1187, loss: 5.591015, accuracy: 0.000000 (another epoch)
 
 Current batch: 1244, loss: 4.151802, accuracy: 0.000000
 

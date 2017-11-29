@@ -71,7 +71,7 @@ class ClassifierNet(object):
                          int(featshape[3] / 2 - 1):int(featshape[3] / 2 + 1),
                          int(featshape[4] / 2 - 1):int(featshape[4] / 2 + 1)]
             # print(centerFeat.shape)
-            centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(2, 2, 2), strides=(2, 2, 2), padding="same",
+            centerFeat = tf.layers.max_pooling3d(centerFeat, pool_size=(1, 1, 1), strides=(1, 1, 1), padding="same",
                                                  data_format=self.DATA_FORMAT,
                                                  name="pool_cent_feat")
             # print(centerFeat.shape)
@@ -85,7 +85,7 @@ class ClassifierNet(object):
             dense2 = tf.layers.dense(inputs=dense1, units=1, activation=tf.nn.sigmoid, name="dense_2")
             out = tf.reshape(dense2, (-1, xsize[1]))
             #print(out.shape)
-            baseline = tf.constant(value=-30.0, dtype=tf.float32)
+            baseline = tf.Variable(initial_value=-30.0, dtype=tf.float32, trainable=True)
             base_prob = tf.nn.sigmoid(baseline)
             # print(base_prob.shape)
             # print(base_prob)

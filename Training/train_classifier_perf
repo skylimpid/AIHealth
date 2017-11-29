@@ -1,0 +1,33 @@
+############################################################
+# Please add loss and accuracy records here at each checkin if the tuning related changes are made.
+# Please do not git push if the change makes worse in optimization or record here for reference purpose
+#
+# anaconda3/bin/python AIHealth/Training/train_classifier.py
+############################################################
+
+###
+Error batch:
+###
+
+Current batch: 1, loss: 3.388442, accuracy: 0.000000
+
+Current batch: 467, loss: 7.157857, accuracy: 0.000000
+
+Current batch: 548, loss: 3.243133, accuracy: 0.000000
+Current batch: 548, loss: 3.288125, accuracy: 0.000000
+
+Current batch: 811, loss: -0.000000, accuracy: 1.000000
+
+Current batch: 894, loss: 3.614202, accuracy: 0.000000
+Current batch: 894, loss: 3.261748, accuracy: 0.000000
+
+Current batch: 1187, loss: 10.717251, accuracy: 0.000000
+Current batch: 1187, loss: 5.591015, accuracy: 0.000000 (next)
+
+Current batch: 1244, loss: 4.151802, accuracy: 0.000000
+
+###
+Current batch: 1276, loss: 0.028311, accuracy: 1.000000
+Epoch 58 finished in loss: 0.128088 and accuracy: 0.975705
+Current batch: 1, loss: 3.843105, accuracy: 0.000000
+

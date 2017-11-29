@@ -89,7 +89,7 @@ class ClassifierTrainer(object):
                 total_loss += loss
                 total_accuracy += accuracy_op
 
-                if batch_count % self.cfg.TRAIN_CL.DISPLAY_STEPS:
+                if batch_count % self.cfg.TRAIN_CL.DISPLAY_STEPS == 0:
                     # print("batch_labels:", batch_labels)
                     # print(loss2, miss_loss)
                     print("case_pred: ", case_pred)

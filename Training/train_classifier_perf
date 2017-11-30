@@ -99,7 +99,24 @@ f7a03adba817f2a2249b9dee0586f4be
 
 
 ###
+loss2
 Current batch: 1276, loss: 0.028311, accuracy: 1.000000
 Epoch 58 finished in loss: 0.128088 and accuracy: 0.975705
 Current batch: 1, loss: 3.843105, accuracy: 0.000000
+
+###
+loss2+0.3*missLoss
+Epoch 1 finished in loss: 1.055803 and accuracy: 0.712382
+Epoch 10 finished in loss: 0.580396 and accuracy: 0.784483
+Epoch 20 finished in loss: 0.342948 and accuracy: 0.800157
+Epoch 30 finished in loss: 0.296376 and accuracy: 0.801724
+Epoch 40 finished in loss: 0.267123 and accuracy: 0.804859
+Epoch 50 finished in loss: 0.222310 and accuracy: 0.807994
+Epoch 60 finished in loss: 0.227427 and accuracy: 0.807994
+Epoch 70 finished in loss: 0.190533 and accuracy: 0.809561
+Epoch 80 finished in loss: 0.198772 and accuracy: 0.808777
+Epoch 90 finished in loss: 0.191618 and accuracy: 0.808777
+Current batch: 630, loss: 0.003784, accuracy: 0.500000
+Epoch 100 finished in loss: 0.191852 and accuracy: 0.808777
+The total time used in training: 129999.90587615967 (36 hours)
 

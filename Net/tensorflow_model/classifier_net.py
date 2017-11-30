@@ -32,7 +32,7 @@ config['filling_value'] = 160
 config['startepoch'] = 20
 config['lr_stage'] = np.array([50,100,140,160,180])
 config['lr'] = [0.01,0.001,0.0001,0.00001,0.000001]
-config['miss_ratio'] = 0
+config['miss_ratio'] = 0.3
 config['miss_thresh'] = 0.03
 
 

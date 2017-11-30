@@ -1,3 +1,2 @@
-model_checkpoint_path: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_50-50"
+model_checkpoint_path: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_25-25"
 all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_25-25"
-all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_50-50"

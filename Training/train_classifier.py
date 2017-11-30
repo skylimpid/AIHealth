@@ -28,10 +28,12 @@ class ClassifierTrainer(object):
             if os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
                 shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
 
-        #sess.run(tf.global_variables_initializer())
 
         average_loss_holder = tf.placeholder(tf.float32)
         average_loss_tensor = tf.summary.scalar("cl_loss", average_loss_holder)
+
+        average_loss2_holder = tf.placeholder(tf.float32)
+        average_loss2_tensor = tf.summary.scalar("cl_loss2", average_loss2_holder)
 
         average_accuracy_holder = tf.placeholder(tf.float32)
         average_accuracy_tensor = tf.summary.scalar("cl_accuracy", average_accuracy_holder)
@@ -61,15 +63,11 @@ class ClassifierTrainer(object):
 
             batch_count = 0
             total_loss = 0
+            total_loss2 = 0
             total_accuracy = 0
             while dataset.hasNextBatch():
 
-                batch_data, batch_coord, batch_isnode, batch_labels = dataset.getNextBatch(self.cfg.TRAIN_CL.BATCH_SIZE)
-                #print("batch_isnode shape: ", batch_isnode.shape)
-                print("batch_labels : ", batch_labels)
-                # batch_labels = batch_labels.reshape((-1, 1))
-                print("batch_data: ")
-                #print(batch_data)
+                batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(self.cfg.TRAIN_CL.BATCH_SIZE)
 
                 _, loss, accuracy_op, loss2, miss_loss, case_pred, case_pred_each, miss_mask, center_feat, nodule_feat = sess.run([self.loss_optimizer, self.loss, self.accuracy,
                                                  self.loss2,
@@ -87,25 +85,34 @@ class ClassifierTrainer(object):
 
                 batch_count += 1
                 total_loss += loss
+                total_loss2 += loss2
                 total_accuracy += accuracy_op
 
                 if batch_count % self.cfg.TRAIN_CL.DISPLAY_STEPS == 0:
-                    # print("batch_labels:", batch_labels)
-                    # print(loss2, miss_loss)
-                    print("case_pred: ", case_pred)
-                    print("case_pred_each: ", case_pred_each)
-                    # print("miss mask: ", miss_mask)
-                    # print("batch_is_nod: ", batch_isnode)
-                    print("center_feat: ", center_feat)
-                    #print("nodule_feat: ", nodule_feat)
                     print("Current batch: %d, loss: %f, accuracy: %f" % (batch_count, loss, accuracy_op))
 
+                if epoch % 10 == 0 and loss > 2:
+                    print("--------------------->Epoch: %d, batch: %d" % (epoch, batch_count))
+                    #print("batch_data: ", batch_data)
+                    print("batch_labels: ", batch_labels)
+                    print("loss: ", loss, loss2, miss_loss, miss_mask)
+                    print("accuracy: ", accuracy_op)
+                    print("case_pred: ", case_pred)
+                    print("case_pred_each: ", case_pred_each)
+                    print("miss mask: ", miss_mask)
+                    print("batch_isnode shape: ", batch_isnode.shape)
+                    print("batch_is_nod: ", batch_isnode)
+                    print("center_feat: ", center_feat)
+                    print("batch_file_names: ", batch_file_names)
+                    #print("nodule_feat: ", nodule_feat)
+
             print("Epoch %d finished in loss: %f and accuracy: %f" % (epoch, total_loss/batch_count, total_accuracy/batch_count))
-            feed = {average_loss_holder: total_loss/batch_count, average_accuracy_holder: total_accuracy/batch_count}
-            average_loss_str, average_accuracy_str = sess.run([average_loss_tensor, average_accuracy_tensor],
+            feed = {average_loss_holder: total_loss/batch_count, average_loss2_holder: total_loss2/batch_count, average_accuracy_holder: total_accuracy/batch_count}
+            average_loss_str, average_loss2_str, average_accuracy_str = sess.run([average_loss_tensor, average_loss2_tensor, average_accuracy_tensor],
                                                               feed_dict=feed)
 
             writer.add_summary(average_loss_str, epoch)
+            writer.add_summary(average_loss2_str, epoch)
             writer.add_summary(average_accuracy_str, epoch)
             dataset.reset()
             if epoch % self.cfg.TRAIN_CL.SAVE_STEPS == 0:

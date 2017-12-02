@@ -22,11 +22,10 @@ class ClassifierTrainer(object):
         self.detectorNet = detectorNet
         self.build_model()
 
-    def train(self, sess, clear=True):
+    def train(self, sess, clear=False):
 
-        if clear:
-            if os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
-                shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
+        if clear and os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
+            shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
 
 
         average_loss_holder = tf.placeholder(tf.float32)
@@ -65,6 +64,9 @@ class ClassifierTrainer(object):
             total_loss = 0
             total_loss2 = 0
             total_accuracy = 0
+            window_count = 0
+            window_loss = 0
+            window_accuracy = 0
             while dataset.hasNextBatch():
 
                 batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(self.cfg.TRAIN_CL.BATCH_SIZE)
@@ -87,9 +89,15 @@ class ClassifierTrainer(object):
                 total_loss += loss
                 total_loss2 += loss2
                 total_accuracy += accuracy_op
+                window_count += 1
+                window_loss += loss
+                window_accuracy += accuracy_op
 
                 if batch_count % self.cfg.TRAIN_CL.DISPLAY_STEPS == 0:
-                    print("Current batch: %d, loss: %f, accuracy: %f" % (batch_count, loss, accuracy_op))
+                    print("Step: %d, avg loss: %f, loss: %f, accuracy: %f" % (batch_count, total_loss/batch_count, window_loss/window_count, window_accuracy/window_count))
+                    window_count = 0
+                    window_loss = 0
+                    window_accuracy = 0
 
                 if epoch % 10 == 0 and loss > 2:
                     print("--------------------->Epoch: %d, batch: %d" % (epoch, batch_count))

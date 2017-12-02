@@ -22,7 +22,7 @@ class ClassifierTrainer(object):
         self.detectorNet = detectorNet
         self.build_model()
 
-    def train(self, sess, clear=True):
+    def train(self, sess, clear=True, enable_validate=False):
 
         if clear:
             if os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
@@ -122,7 +122,7 @@ class ClassifierTrainer(object):
                 filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=epoch)
 
-            if epoch % self.cfg.TRAIN_CL.VALIDATE_EPOCHES == 0:
+            if epoch % self.cfg.TRAIN_CL.VALIDATE_EPOCHES == 0 and enable_validate:
                 val_epoch += 1
                 self.validate(sess, writer, val_epoch)
 

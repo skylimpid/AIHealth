@@ -271,5 +271,5 @@ if __name__ == "__main__":
         # print("after:")
         # print(tf.get_default_graph().get_tensor_by_name(name='global/detector_scope/global/detector_scope/resBlock6/resBlock6-3_conv2_bn/gamma/Adadelta_1:0').eval())
 
-        instance.train(sess)
+        instance.train(sess=sess, enable_validate=True)
 

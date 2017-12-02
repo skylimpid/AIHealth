@@ -58,7 +58,7 @@ class ClassifierTrainer(object):
 
         start_time = time.time()
         tf.get_default_graph().finalize()
-
+        val_epoch = 0
         for epoch in range(1, self.cfg.TRAIN_CL.EPOCHS+1):
 
             batch_count = 0
@@ -115,10 +115,16 @@ class ClassifierTrainer(object):
             writer.add_summary(average_loss2_str, epoch)
             writer.add_summary(average_accuracy_str, epoch)
             dataset.reset()
+
+
             if epoch % self.cfg.TRAIN_CL.SAVE_STEPS == 0:
                 filename = self.cfg.DIR.classifier_net_saver_file_prefix + '{:d}'.format(epoch)
                 filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=epoch)
+
+            if epoch % self.cfg.TRAIN_CL.VALIDATE_EPOCHES == 0:
+                val_epoch += 1
+                self.validate(sess, writer, val_epoch)
 
         filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, (self.cfg.DIR.classifier_net_saver_file_prefix
                                                                         + 'final'))
@@ -161,12 +167,67 @@ class ClassifierTrainer(object):
         correct_predict = tf.equal(self.labels[:,0], tf.cast(self.casePred >= 0.5, tf.float32))
         self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))
 
+
+        self.val_average_loss_holder = tf.placeholder(tf.float32)
+        self.val_average_loss_tensor = tf.summary.scalar("val_cl_loss", self.val_average_loss_holder)
+
+        self.val_average_loss2_holder = tf.placeholder(tf.float32)
+        self.val_average_loss2_tensor = tf.summary.scalar("val_cl_loss2", self.val_average_loss2_holder)
+
+        self.val_average_accuracy_holder = tf.placeholder(tf.float32)
+        self.val_average_accuracy_tensor = tf.summary.scalar("val_cl_accuracy", self.val_average_accuracy_holder)
+
     def test(self):
         pass
 
 
-    def validate(self):
-        pass
+    def validate(self, sess, writer, epoch):
+        dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
+                                         cfg.DIR.bbox_path,
+                                         cfg.DIR.kaggle_full_labels,
+                                         cfg.DIR.classifier_net_validate_data_path,
+                                         self.net_config,
+                                         phase='val')
+
+        batch_count = 0
+        total_loss = 0
+        total_loss2 = 0
+        total_accuracy = 0
+
+        while dataset.hasNextBatch():
+            batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(
+                self.cfg.TRAIN_CL.BATCH_SIZE)
+
+            loss, accuracy_op, loss2 = sess.run(
+                [self.loss, self.accuracy,
+                 self.loss2
+                 ],
+                feed_dict={self.X: batch_data,
+                           self.coord: batch_coord,
+                           self.labels: batch_labels,
+                           self.isnod: batch_isnode})
+
+            batch_count += 1
+            total_loss += loss
+            total_loss2 += loss2
+            total_accuracy += accuracy_op
+
+        print("validation Epoch %d finished in loss: %f and accuracy: %f" % (epoch,
+                                                                             total_loss / batch_count,
+                                                                             total_accuracy / batch_count))
+
+        feed = {self.val_average_loss_holder: total_loss / batch_count,
+                self.val_average_loss2_holder: total_loss2 / batch_count,
+                self.val_average_accuracy_holder: total_accuracy / batch_count}
+
+        average_loss_str, average_loss2_str, average_accuracy_str = sess.run(
+            [self.val_average_loss_tensor, self.val_average_loss2_tensor, self.val_average_accuracy_tensor],
+            feed_dict=feed)
+
+        writer.add_summary(average_loss_str, epoch)
+        writer.add_summary(average_loss2_str, epoch)
+        writer.add_summary(average_accuracy_str, epoch)
+        dataset.reset()
 
 
 if __name__ == "__main__":

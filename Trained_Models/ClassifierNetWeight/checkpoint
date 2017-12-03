@@ -1,6 +1,2 @@
-model_checkpoint_path: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_final"
-all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_25-25"
-all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_50-50"
-all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_75-75"
-all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_100-100"
+model_checkpoint_path: "/home/xuan/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_final"
 all_model_checkpoint_paths: "/media/luhui/E/AIDev/AIHealth/Trained_Models/ClassifierNetWeight/classifier_model_weights_iter_final"

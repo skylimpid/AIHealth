@@ -2,7 +2,7 @@ import os
 import dicom
 import scipy.ndimage
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 from skimage import measure
 from Training.constants import DATA_SAMPLE_DIR

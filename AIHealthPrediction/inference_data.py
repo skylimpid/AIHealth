@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from Utils.data_set_utils import SimpleInferenceCrop
 
 class InferenceDataSet(object):
     def __init__(self, config, split_combiner, preprocessed_clean_img):
@@ -10,6 +11,7 @@ class InferenceDataSet(object):
         self.crop_size = config['crop_size']
         self.split_comber = split_combiner
         self.clean_img = preprocessed_clean_img
+        self.crop = SimpleInferenceCrop(config)
 
 
     def getDetectorDataSet(self):
@@ -48,15 +50,16 @@ class InferenceDataSet(object):
 
         chosenid = conf_list.argsort()[::-1][:topk]
         croplist = np.zeros([topk, 1, self.crop_size[0], self.crop_size[1], self.crop_size[2]]).astype('float32')
-        coordlist = np.zeros([topk, 3, self.crop_size[0] / self.stride, self.crop_size[1] / self.stride,
-                              self.crop_size[2] / self.stride]).astype('float32')
+        coordlist = np.zeros([topk, 3, int(self.crop_size[0] / self.stride), int(self.crop_size[1] / self.stride),
+                              int(self.crop_size[2] / self.stride)]).astype('float32')
 
         for i, id in enumerate(chosenid):
             target = pbb[id, 1:]
             crop, coord = self.crop(img, target)
-            crop = crop.astype(np.float32)
+            crop = (crop.astype(np.float32) - 128) / 128
             croplist[i] = crop
             coordlist[i] = coord
 
-
-        return np.asarray(croplist), np.asarray(coordlist)
+        cropArr = np.asarray(croplist)
+        coordArr = np.asarray(coordlist)
+        return np.expand_dims(cropArr, axis=0), np.expand_dims(coordArr, axis=0)

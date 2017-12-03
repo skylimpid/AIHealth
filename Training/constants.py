@@ -21,14 +21,14 @@
 
 
 # Please add your favor path below with the switch
-ENGINEER_FAVOR = "LH"
+ENGINEER_FAVOR = "XG"
 
 if ENGINEER_FAVOR == "XG":
-    DATA_BASE_DIR = "/home/xuan/lung_cancer_data/"
+    DATA_BASE_DIR = "/home/xuan/AIHealthData/"
     SYS_DIR = "/home/xuan/AIHealth"
     DETECTOR_NET_TENSORBOARD_LOG_DIR = "/home/xuan/tensorboard/detector_net"
     CLASSIFIER_NET_TENSORBOARD_LOG_DIR = "/home/xuan/tensorboard/classifier_net"
-    DATA_SAMPLE_DIR = "/home/xuan/lung_cancer_data/sample_images"
+    DATA_SAMPLE_DIR = "/home/xuan/AIHealthData/sample_images"
 
 if ENGINEER_FAVOR == "LH":
     DATA_BASE_DIR = "/media/luhui/E/data/lung_data/"

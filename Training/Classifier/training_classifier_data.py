@@ -19,6 +19,7 @@ class TrainingClassifierData(DataSet):
         self.crop_size = config['crop_size']
         self.stride = config['stride']
         self.augtype = config['augtype']
+        self.blacklist = config['blacklist']
 
         datadir = preprocess_result_dir
         # bboxpath = bboxpath_dir
@@ -108,7 +109,19 @@ class TrainingClassifierData(DataSet):
             if not self.hasNextBatch():
                 break
 
-            croplist, coordlist, isnodlist, label, file_name = self.__getitem__(self.index)
+            file_name = None
+            while self.hasNextBatch():
+                croplist, coordlist, isnodlist, label, file_name = self.__getitem__(self.index)
+                self.index += 1
+
+                # skip if blacklist
+                if file_name in self.blacklist:
+                    file_name = None
+                else:
+                    break
+
+            if file_name is None:
+                break
 
             if final_cropList is None:
                 final_cropList = np.expand_dims(croplist, axis=0)
@@ -135,7 +148,6 @@ class TrainingClassifierData(DataSet):
             else:
                 final_file_names = np.append(final_file_names, file_name)
 
-            self.index += 1
 
         # labels
         final_labels = final_labels.reshape((-1, 1))

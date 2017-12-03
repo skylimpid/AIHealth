@@ -32,8 +32,12 @@ config['filling_value'] = 160
 config['startepoch'] = 20
 config['lr_stage'] = np.array([50,100,140,160,180])
 config['lr'] = [0.01,0.001,0.0001,0.00001,0.000001]
-config['miss_ratio'] = 0.3
-config['miss_thresh'] = 0.03
+config['miss_ratio'] = 0.1
+config['miss_thresh'] = 0.05
+config['blacklist'] = {"02801e3bbcc6966cb115a962012c35df","229b8b785f880f61d8dad636c3dc2687","322bf0acacba9650fa5656b9613c75c8","627836151c555187503dfe472fb15001",
+                       "6969c031ee0c34053faff3aac9dd2da7","9b871732b3935661e7639e84a6ab9747","aa2747369e1a0c724bea611ea7e5ffcf","c0279b938ac1790f1badfcd4459f5c4c",
+                       "eb8d5136918d6859ca3cc3abafe369ac","f7a03adba817f2a2249b9dee0586f4be","0f5ab1976a1b1ef1c2eb1d340b0ce9c4","868b024d9fa388b7ddab12ec1c06af38",
+                       "9f52323d216f89d300612cfac0122d8b","b635cda3e75b4b7238c18c6a5f1858f6"}
 
 
 class ClassifierNet(object):

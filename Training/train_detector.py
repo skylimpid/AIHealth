@@ -206,9 +206,9 @@ class DetectorTrainer(object):
 
 
 
-    def train(self, sess, continue_training=False, clear=True, enable_validate=False):
-        if clear:
-            if os.path.exists(DETECTOR_NET_TENSORBOARD_LOG_DIR):
+    def train(self, sess, continue_training=False, clear=False, enable_validate=False):
+
+        if clear and os.path.exists(DETECTOR_NET_TENSORBOARD_LOG_DIR):
                 shutil.rmtree(DETECTOR_NET_TENSORBOARD_LOG_DIR)
 
         # initialize the global parameters
@@ -324,7 +324,7 @@ class DetectorTrainer(object):
                 batch_step += 1
                 if batch_step % self.cfg.TRAIN.DISPLAY_STEPS == 0:
                     latest_avg_loss = latest_total_loss / latest_count
-                    print("Step: %d, Avg Loss: %f, Cur Loss: %f" % (batch_step, (total_loss/batch_step), latest_avg_loss))
+                    print("Step: %d, avg loss: %f, loss: %f" % (batch_step, (total_loss/batch_step), latest_avg_loss))
                     latest_total_loss = 0
                     latest_count = 0
 

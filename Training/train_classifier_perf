@@ -68,34 +68,35 @@ f7a03adba817f2a2249b9dee0586f4be
 ###
 27 files at the 40th epoch (batch_size=2)
 Epoch 40 finished in loss: 0.267123 and accuracy: 0.804859
+(b): labeled in the blacklist
 ###
-02801e3bbcc6966cb115a962012c35df
-0f5ab1976a1b1ef1c2eb1d340b0ce9c4
+02801e3bbcc6966cb115a962012c35df (b)
+0f5ab1976a1b1ef1c2eb1d340b0ce9c4 (b)
 11fe5426ef497bc490b9f1465f1fb25e
-229b8b785f880f61d8dad636c3dc2687
+229b8b785f880f61d8dad636c3dc2687 (b)
 263a1c3bfa43556623e75ed901e3fd8f
 2c06f5c66f3c79515b7712605dea4400
-322bf0acacba9650fa5656b9613c75c8
+322bf0acacba9650fa5656b9613c75c8 (b)
 4cc8af2efef2f41bf70684be25276ce5
 608202eb3c368512e55e9e339a203790
-627836151c555187503dfe472fb15001
+627836151c555187503dfe472fb15001 (b)
 63b5be42543c98ac5392f1bfbda085bf
 64a5a866461a3b6006efb0075e04dffe
-6969c031ee0c34053faff3aac9dd2da7
-868b024d9fa388b7ddab12ec1c06af38
+6969c031ee0c34053faff3aac9dd2da7 (b)
+868b024d9fa388b7ddab12ec1c06af38 (b)
 882107a204c302e27628f85522baea49
-9b871732b3935661e7639e84a6ab9747
-9f52323d216f89d300612cfac0122d8b
+9b871732b3935661e7639e84a6ab9747 (b)
+9f52323d216f89d300612cfac0122d8b (b)
 a8ff92ed7d8cf90d24f67ba6614c3e4f
-aa2747369e1a0c724bea611ea7e5ffcf
-b635cda3e75b4b7238c18c6a5f1858f6
+aa2747369e1a0c724bea611ea7e5ffcf (b)
+b635cda3e75b4b7238c18c6a5f1858f6 (b)
 bb4b43d0dc4d9d2b61150df6556f6490
-c0279b938ac1790f1badfcd4459f5c4c
+c0279b938ac1790f1badfcd4459f5c4c (b)
 c19197af81f94110ddc23317e182f37d
 dbfbc12c7a943a2dc0e34bfd4a636bca
-eb8d5136918d6859ca3cc3abafe369ac
+eb8d5136918d6859ca3cc3abafe369ac (b)
 ed49b57854f5580658fb3510676e03dd
-f7a03adba817f2a2249b9dee0586f4be
+f7a03adba817f2a2249b9dee0586f4be (b)
 
 
 ###
@@ -119,4 +120,16 @@ Epoch 90 finished in loss: 0.191618 and accuracy: 0.808777
 Current batch: 630, loss: 0.003784, accuracy: 0.500000
 Epoch 100 finished in loss: 0.191852 and accuracy: 0.808777
 The total time used in training: 129999.90587615967 (36 hours)
+
+###
+Refer the details at analysis/classifier_net_training_result_20171202
+tb: events.out.tfevents.1512124917.luhui-GL502VSK
+Add 50% blacklist
+
+Epoch 20 finished in loss: 0.128321 and accuracy: 0.976228
+Epoch 60 finished in loss: 0.065808 and accuracy: 0.994453
+Step: 1260, avg loss: 0.066261, loss: 0.017082, accuracy: 1.000000
+Epoch 80 finished in loss: 0.066156 and accuracy: 0.994453
+The total time used in training: 105277.75817108154 (29 hours)
+
 

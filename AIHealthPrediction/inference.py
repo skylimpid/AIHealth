@@ -17,8 +17,6 @@ from Net.tensorflow_model.classifier_net import get_model as classifier_net_mode
 from Utils.utils import nms
 from AIHealthPrediction.html_generator import generate_html_report
 
-
-
 def sigmoid(x):
   return 1 / (1 + np.exp(-x))
 
@@ -75,7 +73,7 @@ def inference_each(patient_id, dicom_dir, confidence_level):
         len(os.listdir(patient_dicom))))
     start = time.time()
     resolution = np.array([1, 1, 1])
-    im, m1, m2, spacing = dicom_python(patient_dicom)
+    im, m1, m2, spacing, origin = dicom_python(patient_dicom)
     Mask = m1 + m2
 
     newshape = np.round(np.array(Mask.shape) * spacing / resolution)
@@ -132,7 +130,7 @@ def inference_each(patient_id, dicom_dir, confidence_level):
 
     print("Generating the diagnosis report.")
     generate_html_report(report_dir=config['report_dir'], patient_id=patient_id, clean_img=cleaned_dicom_files,
-                         bbox=bbox, predict=predict)
+                         bbox=bbox, predict=predict, spacing=spacing, origin=origin)
     print("The Diagnosis report has been generated for the patient:{}.".format(patient_id))
 
     end = time.time()

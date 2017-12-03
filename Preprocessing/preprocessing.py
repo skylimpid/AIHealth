@@ -95,7 +95,7 @@ def savenpy(id, annos, filelist, data_path, prep_folder):
     label = annos[annos[:, 0] == name]
     label = label[:, [3, 1, 2, 4]].astype('float')
 
-    im, m1, m2, spacing = dicom_python(os.path.join(data_path, name))
+    im, m1, m2, spacing, origin = dicom_python(os.path.join(data_path, name))
     Mask = m1 + m2
 
     newshape = np.round(np.array(Mask.shape) * spacing / resolution)

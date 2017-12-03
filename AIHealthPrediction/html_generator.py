@@ -12,7 +12,12 @@ from matplotlib.patches import Circle
 import os
 
 
-def generate_html_report(report_dir, patient_id, clean_img, bbox, predict):
+def voxel_2_world(voxel_coordinates, origin, spacing):
+    stretched_voxel_coordinates = voxel_coordinates * spacing
+    world_coordinates = stretched_voxel_coordinates + origin
+    return world_coordinates
+
+def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spacing, origin):
 
     patient_report_dir = os.path.join(report_dir, patient_id)
     if not os.path.exists(patient_report_dir):
@@ -49,7 +54,14 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict):
     </div>
     '''
 
-    df = DataFrame(bbox, columns=['probablity', 'z-coordinator', 'y-coordinator', 'x-coordinator', 'nodule_diameter'])
+    # extend bbox to have world position
+    bbox_extend = np.zeros((bbox.shape[0], bbox.shape[1] + 3))
+    bbox_extend[:, 0:bbox.shape[1]] = bbox
+    bbox_extend[:, bbox.shape[1]:] = voxel_2_world(bbox[:, 1:4], origin, spacing)
+
+    df = DataFrame(bbox_extend, columns=['probablity','z-coordinator(voxel)','y-coordinator(voxel)',
+                                         'x-coordinator(voxel)', 'nodule_diameter', 'z-coordinator(world)',
+                                         'y-coordinator(world)', 'x-coordinator(world)'])
     df.insert(0, 'nodule_id', list(range(1, len(bbox)+1)))
     df.index += 1
 
@@ -62,9 +74,9 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict):
 
     for index, row in df.iterrows():
         id = int(row['nodule_id'])
-        z = int(row['z-coordinator'])
-        y = row['y-coordinator']
-        x = row['x-coordinator']
+        z = int(row['z-coordinator(voxel)'])
+        y = row['y-coordinator(voxel)']
+        x = row['x-coordinator(voxel)']
         diameter = row['nodule_diameter']
 
         circ = Circle((x, y), diameter, color='r', fill=False)
@@ -73,7 +85,7 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict):
 
         ax.set_aspect('equal')
 
-        ax.imshow(clean_img[0][z])
+        ax.imshow(clean_img[0][z], cmap='gray')
 
         ax.add_patch(circ)
 
@@ -93,6 +105,13 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict):
 
 
 if __name__ == "__main__":
-    img = np.load('/home/xuan/AIHealthData/preprocess_result/ff8599dd7c1139be3bad5a0351ab749a_clean.npy')
+    img = np.load('/home/xuan/AIHealthData/preprocess_result/0a0c32c9e08cc2ea76a71649de56be6d_clean.npy')
     print(img.shape)
-    generate_html_report("/home/xuan/AIHealthData/report", "patient_id", img, None, 0.5)
+    bbox = np.load(
+        '/home/xuan/AIHealthData/classifier_intermediate/candidate_box/0a0c32c9e08cc2ea76a71649de56be6d_candidate.npy')
+    bbox = bbox[:2, :]
+    print(bbox.shape)
+    #print(bbox.shape)
+    #print(bbox)
+    generate_html_report("/home/xuan/AIHealthData/report", "patient_id", img, bbox, 0.5, [0.5,0.25,0.3], [-120, -322, -145])
+

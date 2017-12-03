@@ -247,14 +247,16 @@ def dicom_python(case_path):
 
     bw = fill_hole(bw)
     bw1, bw2, bw = two_lung_only(bw, spacing)
-    return case_pixels, bw1, bw2, spacing
+    return case_pixels, bw1, bw2, spacing, case[0].ImagePositionPatient
 
 
 if __name__ == '__main__':
     INPUT_FOLDER = DATA_SAMPLE_DIR
     patients = os.listdir(INPUT_FOLDER)
     patients.sort()
-    case_pixels, m1, m2, spacing = dicom_python(os.path.join(INPUT_FOLDER, patients[5]))
+    case_pixels, m1, m2, spacing, origin = dicom_python(os.path.join(INPUT_FOLDER, patients[5]))
+    print(spacing)
+    print(origin)
     plt.imshow(m1[60])
     plt.figure()
     plt.imshow(m2[60])

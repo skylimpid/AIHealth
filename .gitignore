@@ -5,5 +5,5 @@ prediction*.csv
 .DS_Store
 .idea/
 build/
-Trained_Models/ClassifierNetWeight/classifier_model_weights_iter*
-Trained_Models/DetectorNetWeight/detector_model_weights_iter*
+analysis/
+Trained_Models/

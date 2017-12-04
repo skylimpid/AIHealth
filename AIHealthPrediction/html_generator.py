@@ -1,15 +1,9 @@
-import numpy as np
-from pandas import *
-import datetime
-import matplotlib
-
-import matplotlib.image as mpimg
-
-import matplotlib.pyplot as plt
-
-from matplotlib.patches import Circle
-
 import os
+import datetime
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
+from pandas import *
+from Training.constants import DATA_BASE_DIR
 
 
 def voxel_2_world(voxel_coordinates, origin, spacing):
@@ -105,13 +99,14 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
 
 
 if __name__ == "__main__":
-    img = np.load('/home/xuan/AIHealthData/preprocess_result/0a0c32c9e08cc2ea76a71649de56be6d_clean.npy')
+    img = np.load(
+        os.path.join(DATA_BASE_DIR + '/preprocess_result/0a0c32c9e08cc2ea76a71649de56be6d_clean.npy'))
     print(img.shape)
     bbox = np.load(
-        '/home/xuan/AIHealthData/classifier_intermediate/candidate_box/0a0c32c9e08cc2ea76a71649de56be6d_candidate.npy')
+        os.path.join(DATA_BASE_DIR + '/classifier_intermediate/candidate_box/0a0c32c9e08cc2ea76a71649de56be6d_candidate.npy'))
     bbox = bbox[:2, :]
     print(bbox.shape)
     #print(bbox.shape)
     #print(bbox)
-    generate_html_report("/home/xuan/AIHealthData/report", "patient_id", img, bbox, 0.5, [0.5,0.25,0.3], [-120, -322, -145])
+    generate_html_report(os.path.join(DATA_BASE_DIR + '/report'), "patient_id", img, bbox, 0.5, [0.5,0.25,0.3], [-120, -322, -145])
 

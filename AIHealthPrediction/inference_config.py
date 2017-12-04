@@ -1,5 +1,6 @@
-from Training.constants import DIMEN_X, SYS_DIR
 import os
+from Training.constants import DIMEN_X, SYS_DIR, DATA_BASE_DIR
+
 
 config = {}
 config['stride'] = 4
@@ -13,5 +14,4 @@ config['nms_th'] = 0.05
 config['detector_net_batch_size'] = 5
 config['detector_net_ckg'] = os.path.join(SYS_DIR + "/Trained_Models/DetectorNetWeight")
 config['classifier_net_ckg'] = os.path.join(SYS_DIR + "/Trained_Models/ClassifierNetWeight")
-
-config['report_dir'] = '/home/xuan/AIHealthData/report'
+config['report_dir'] = os.path.join(DATA_BASE_DIR + '/report')

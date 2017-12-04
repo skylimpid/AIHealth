@@ -1,21 +1,24 @@
 import argparse
 import os
 import sys
+import tensorflow as tf
+import time
+import numpy as np
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from Training.constants import DIMEN_X, DIMEN_Y
 from Preprocessing.preprocessing_dicom import dicom_python
 from Preprocessing.preprocessing import process_mask, resample, lumTrans
-import numpy as np
 from Utils.split_combine import SplitComb
 from Training.constants import SIDE_LEN, MARGIN
 from AIHealthPrediction.inference_config import config
 from AIHealthPrediction.inference_data import InferenceDataSet
-import tensorflow as tf
-import time
 from Net.tensorflow_model.detector_net import DetectorNet, get_model as detect_net_model
 from Net.tensorflow_model.classifier_net import get_model as classifier_net_model
 from Utils.utils import nms
 from AIHealthPrediction.html_generator import generate_html_report
+from Training.constants import DATA_BASE_DIR
+
 
 def sigmoid(x):
   return 1 / (1 + np.exp(-x))
@@ -216,14 +219,12 @@ def classifier_net_predict(data_set, bbox):
 
 
 
-
-
 if __name__ == '__main__':
     inference()
 
     """
     # prepare the dataset for detectnet and classifiernet
-    cleaned_dicom_files = np.load('/home/xuan/AIHealthData/preprocess_result/fb57fc6377fd37bb5d42756c2736586c_clean.npy')
+    cleaned_dicom_files = np.load(os.path.join(DATA_BASE_DIR + '/preprocess_result/fb57fc6377fd37bb5d42756c2736586c_clean.npy'))
     split_combine = SplitComb(side_len=SIDE_LEN, max_stride=config['max_stride'],
                               stride=config['stride'], margin=MARGIN,
                               pad_value=config['pad_value'])
@@ -231,7 +232,7 @@ if __name__ == '__main__':
     data_set = InferenceDataSet(config=config, split_combiner=split_combine,
                                 preprocessed_clean_img=cleaned_dicom_files)
 
-    bbox = np.load('/home/xuan/AIHealthData/classifier_intermediate/candidate_box/fb57fc6377fd37bb5d42756c2736586c_candidate.npy')
+    bbox = np.load(os.path.join(DATA_BASE_DIR + '/classifier_intermediate/candidate_box/fb57fc6377fd37bb5d42756c2736586c_candidate.npy'))
 
     imgs, coord2, _ = data_set.getDetectorDataSet()
     print(imgs.shape)

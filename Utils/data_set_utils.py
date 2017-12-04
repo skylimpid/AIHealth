@@ -350,6 +350,47 @@ class simpleCrop():
         return crop, coord
 
 
+
+class SimpleInferenceCrop():
+    def __init__(self, config):
+        self.crop_size = config['crop_size']
+        self.stride = config['stride']
+        self.filling_value = config['filling_value']
+
+    def __call__(self, imgs, target):
+
+        crop_size = np.array(self.crop_size).astype('int')
+
+        jitter = 0
+        start = (target[:3] - crop_size / 2 + jitter).astype('int')
+        pad = [[0, 0]]
+        for i in range(3):
+            if start[i] < 0:
+                leftpad = -start[i]
+                start[i] = 0
+            else:
+                leftpad = 0
+            if start[i] + crop_size[i] > imgs.shape[i + 1]:
+                rightpad = start[i] + crop_size[i] - imgs.shape[i + 1]
+            else:
+                rightpad = 0
+            pad.append([leftpad, rightpad])
+        imgs = np.pad(imgs, pad, 'constant', constant_values=self.filling_value)
+        crop = imgs[:, start[0]:start[0] + crop_size[0], start[1]:start[1] + crop_size[1],
+               start[2]:start[2] + crop_size[2]]
+
+        normstart = np.array(start).astype('float32') / np.array(imgs.shape[1:]) - 0.5
+        normsize = np.array(crop_size).astype('float32') / np.array(imgs.shape[1:])
+        xx, yy, zz = np.meshgrid(np.linspace(normstart[0], normstart[0] + normsize[0], self.crop_size[0] / self.stride),
+                                 np.linspace(normstart[1], normstart[1] + normsize[1], self.crop_size[1] / self.stride),
+                                 np.linspace(normstart[2], normstart[2] + normsize[2], self.crop_size[2] / self.stride),
+                                 indexing='ij')
+        coord = np.concatenate([xx[np.newaxis, ...], yy[np.newaxis, ...], zz[np.newaxis, :]], 0).astype('float32')
+        return crop, coord
+
+
+
+
 def sample(conf, N, T=1):
     if len(conf) > N:
         target = list(range(len(conf)))

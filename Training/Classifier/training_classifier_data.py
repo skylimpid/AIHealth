@@ -34,9 +34,9 @@ class TrainingClassifierData(DataSet):
             name = f.split('_')[0]
             self.pbb_label[name] = os.path.join(cfg.DIR.classifier_net_intermediate_pbb_label, f)
 
-        idcs = np.load(split)
+        self.idcs = np.load(split)
 
-        self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in idcs]
+        self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in self.idcs]
 
         # we should have labelfile all the time
         self.yset = {}

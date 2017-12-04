@@ -6,17 +6,19 @@ from Training.configuration_training import cfg
 from Net.tensorflow_model.classifier_net import get_config
 
 
-def main(config, split, bboxpath):
-    # remove folder and create new one
-    if os.path.exists(cfg.DIR.classifier_net_intermediate_candidate_box):
-        shutil.rmtree(cfg.DIR.classifier_net_intermediate_candidate_box)
+def main(config, split, bboxpath, clear = False):
 
-    os.makedirs(cfg.DIR.classifier_net_intermediate_candidate_box)
+    if clear:
+        if os.path.exists(cfg.DIR.classifier_net_intermediate_candidate_box):
+            shutil.rmtree(cfg.DIR.classifier_net_intermediate_candidate_box)
+        if os.path.exists(cfg.DIR.classifier_net_intermediate_pbb_label):
+            shutil.rmtree(cfg.DIR.classifier_net_intermediate_pbb_label)
 
-    if os.path.exists(cfg.DIR.classifier_net_intermediate_pbb_label):
-        shutil.rmtree(cfg.DIR.classifier_net_intermediate_pbb_label)
+    if not os.path.exists(cfg.DIR.classifier_net_intermediate_candidate_box):
+        os.makedirs(cfg.DIR.classifier_net_intermediate_candidate_box)
 
-    os.makedirs(cfg.DIR.classifier_net_intermediate_pbb_label)
+    if not os.path.exists(cfg.DIR.classifier_net_intermediate_pbb_label):
+        os.makedirs(cfg.DIR.classifier_net_intermediate_pbb_label)
 
     idcs = np.load(split)
     for idx in idcs.tolist():
@@ -41,7 +43,12 @@ def main(config, split, bboxpath):
         np.save(candidate_box_file, pbb)
         np.save(pbb_file, pbb_label)
 
+    print("Prepared totally: ", len(idcs))
+
 
 if __name__ == "__main__":
     config = get_config()
-    main(config=config, split=cfg.DIR.classifier_net_train_data_path, bboxpath=cfg.DIR.bbox_path)
+    # please use the following path appropriately for preparing:
+    # training data path: cfg.DIR.classifier_net_train_data_path
+    # validation data path: cfg.DIR.detector_net_validate_data_path
+    main(config=config, split=cfg.DIR.detector_net_validate_data_path, bboxpath=cfg.DIR.bbox_path)

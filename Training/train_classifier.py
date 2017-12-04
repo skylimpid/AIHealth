@@ -22,11 +22,10 @@ class ClassifierTrainer(object):
         self.detectorNet = detectorNet
         self.build_model()
 
-    def train(self, sess, clear=False, enable_validate=False):
+    def train(self, sess, continue_training = False, clear=False, enable_validate=False):
 
         if clear and os.path.exists(CLASSIFIER_NET_TENSORBOARD_LOG_DIR):
             shutil.rmtree(CLASSIFIER_NET_TENSORBOARD_LOG_DIR)
-
 
         average_loss_holder = tf.placeholder(tf.float32)
         average_loss_tensor = tf.summary.scalar("cl_loss", average_loss_holder)
@@ -45,8 +44,15 @@ class ClassifierTrainer(object):
         if not os.path.exists(cfg.DIR.classifier_net_saver_dir):
             os.makedirs(cfg.DIR.classifier_net_saver_dir)
 
-        var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope')
-        sess.run(tf.variables_initializer(var_classifier))
+        # load previous saved weights if we enable the continue_training
+        if continue_training:
+            value_list = []
+            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope'))
+            restore = tf.train.Saver(value_list)
+            restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.classifier_net_saver_dir))
+        else:
+            var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope')
+            sess.run(tf.variables_initializer(var_classifier))
 
         dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
                                          cfg.DIR.bbox_path,
@@ -99,7 +105,7 @@ class ClassifierTrainer(object):
                     window_loss = 0
                     window_accuracy = 0
 
-                if epoch % 10 == 0 and loss > 2:
+                if epoch > 30 and epoch % 10 == 0 and loss > 2:
                     print("--------------------->Epoch: %d, batch: %d" % (epoch, batch_count))
                     #print("batch_data: ", batch_data)
                     print("batch_labels: ", batch_labels)
@@ -110,7 +116,7 @@ class ClassifierTrainer(object):
                     print("miss mask: ", miss_mask)
                     print("batch_isnode shape: ", batch_isnode.shape)
                     print("batch_is_nod: ", batch_isnode)
-                    print("center_feat: ", center_feat)
+                    #print("center_feat: ", center_feat)
                     print("batch_file_names: ", batch_file_names)
                     #print("nodule_feat: ", nodule_feat)
 
@@ -124,13 +130,12 @@ class ClassifierTrainer(object):
             writer.add_summary(average_accuracy_str, epoch)
             dataset.reset()
 
-
             if epoch % self.cfg.TRAIN_CL.SAVE_STEPS == 0:
                 filename = self.cfg.DIR.classifier_net_saver_file_prefix + '{:d}'.format(epoch)
                 filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, filename)
                 saver.save(sess, filename, global_step=epoch)
 
-            if epoch % self.cfg.TRAIN_CL.VALIDATE_EPOCHES == 0 and enable_validate:
+            if enable_validate and epoch >= self.cfg.TRAIN_CL.VAL_EPOCHES_BASE and epoch % self.cfg.TRAIN_CL.VAL_EPOCHES_INC == 0:
                 val_epoch += 1
                 self.validate(sess, writer, val_epoch)
 
@@ -167,11 +172,9 @@ class ClassifierTrainer(object):
                                         self.cfg.TRAIN_CL.LEARNING_RATE_DECAY_RATE,
                                         staircase=True)
 
-        #self.loss_optimizer = tf.train.MomentumOptimizer(learning_rate=lr, momentum=self.cfg.TRAIN_CL.MOMENTUM).minimize(
-        #    self.loss, global_step=global_step)
-
         self.loss_optimizer = tf.train.AdadeltaOptimizer(learning_rate=lr).minimize(self.loss, global_step=global_step)
 
+        # TODO: adjust 0.5 appropriately for a better result
         correct_predict = tf.equal(self.labels[:,0], tf.cast(self.casePred >= 0.5, tf.float32))
         self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))
 
@@ -190,6 +193,7 @@ class ClassifierTrainer(object):
 
 
     def validate(self, sess, writer, epoch):
+
         dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
                                          cfg.DIR.bbox_path,
                                          cfg.DIR.kaggle_full_labels,
@@ -201,10 +205,16 @@ class ClassifierTrainer(object):
         total_loss = 0
         total_loss2 = 0
         total_accuracy = 0
-
+        window_count = 0
+        window_loss = 0
+        window_accuracy = 0
+        stat_low_acc = 0
+        stat_acc_80 = 0
+        stat_acc_90 = 0
+        stat_acc_95 = 0
         while dataset.hasNextBatch():
             batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(
-                self.cfg.TRAIN_CL.BATCH_SIZE)
+                self.cfg.TRAIN_CL.VAL_BATCH_SIZE)
 
             loss, accuracy_op, loss2 = sess.run(
                 [self.loss, self.accuracy,
@@ -219,10 +229,46 @@ class ClassifierTrainer(object):
             total_loss += loss
             total_loss2 += loss2
             total_accuracy += accuracy_op
+            window_count += 1
+            window_loss += loss
+            window_accuracy += accuracy_op
 
-        print("validation Epoch %d finished in loss: %f and accuracy: %f" % (epoch,
-                                                                             total_loss / batch_count,
-                                                                             total_accuracy / batch_count))
+            if accuracy_op >= 0.8:
+                stat_acc_80 += 1
+                if accuracy_op >= 0.9:
+                    stat_acc_90 += 1
+                    if accuracy_op >= 0.95:
+                        stat_acc_95 += 1
+            elif accuracy_op < 0.5:
+                stat_low_acc += 1
+
+            # dump potential error
+            if loss > 1:
+                print("--->Val epoch: %d, batch: %d" % (epoch, batch_count))
+                print("batch_labels: ", batch_labels)
+                print("loss: ", loss, loss2)
+                print("accuracy: ", accuracy_op)
+                print("batch_is_nod: ", batch_isnode)
+                print("batch_file_names: ", batch_file_names)
+
+            if batch_count % self.cfg.TRAIN_CL.VAL_DISPLAY_STEPS == 0:
+                print("Val step: %d, avg loss: %f, loss: %f, accuracy: %f" % (
+                batch_count, total_loss / batch_count, window_loss / window_count, window_accuracy / window_count))
+                window_count = 0
+                window_loss = 0
+                window_accuracy = 0
+
+        print("Validation epoch %d finished in loss: %f, loss2: %f and accuracy: %f" % (
+                                                                                epoch,
+                                                                                total_loss / batch_count,
+                                                                                total_loss2 / batch_count,
+                                                                                total_accuracy / batch_count))
+        print("Validation stat, total: %d, low accuracy: %d, 0.8 above: %d, 0.9 above: %d, 0.95 above: %d" % (
+                                                                                                        batch_count,
+                                                                                                        stat_low_acc,
+                                                                                                        stat_acc_80,
+                                                                                                        stat_acc_90,
+                                                                                                        stat_acc_95))
 
         feed = {self.val_average_loss_holder: total_loss / batch_count,
                 self.val_average_loss2_holder: total_loss2 / batch_count,
@@ -235,6 +281,7 @@ class ClassifierTrainer(object):
         writer.add_summary(average_loss_str, epoch)
         writer.add_summary(average_loss2_str, epoch)
         writer.add_summary(average_accuracy_str, epoch)
+        # local variable
         dataset.reset()
 
 
@@ -279,5 +326,5 @@ if __name__ == "__main__":
         # print("after:")
         # print(tf.get_default_graph().get_tensor_by_name(name='global/detector_scope/global/detector_scope/resBlock6/resBlock6-3_conv2_bn/gamma/Adadelta_1:0').eval())
 
-        instance.train(sess)
+        instance.train(sess, continue_training = True, enable_validate = True)
 

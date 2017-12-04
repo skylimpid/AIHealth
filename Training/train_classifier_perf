@@ -132,4 +132,14 @@ Step: 1260, avg loss: 0.066261, loss: 0.017082, accuracy: 1.000000
 Epoch 80 finished in loss: 0.066156 and accuracy: 0.994453
 The total time used in training: 105277.75817108154 (29 hours)
 
+###
+Refer the details at analysis/classifier_net_training_result_20171203
+tb: events.out.tfevents.1512292334.luhui-GL502VSK
+Add validate step
 
+Epoch 1 finished in loss: 0.516376 and accuracy: 0.763074
+Epoch 50 finished in loss: 0.070261 and accuracy: 0.992868
+Epoch 60 finished in loss: 0.071397 and accuracy: 0.992868
+Validation epoch 3 finished in loss: 1.569094, loss2: 1.547946 and accuracy: 0.755486
+Validation stat, total: 319, low accuracy: 78, 0.8 above: 241, 0.9 above: 241, 0.95 above: 241
+The total time used in training: 84382.4983766079

@@ -62,10 +62,9 @@ class DetectorTrainer(object):
         return False
 
 
+    def train_2(self, sess, continue_training=False, clear=False, enable_validate=False):
 
-    def train_2(self, sess, continue_training=False, clear=True, enable_validate=False):
-        if clear:
-            if os.path.exists(DETECTOR_NET_TENSORBOARD_LOG_DIR):
+        if clear and os.path.exists(DETECTOR_NET_TENSORBOARD_LOG_DIR):
                 shutil.rmtree(DETECTOR_NET_TENSORBOARD_LOG_DIR)
 
         # initialize the global parameters
@@ -414,8 +413,6 @@ class DetectorTrainer(object):
         self.summary_op = tf.summary.merge_all()
 
 
-
-
     def build_model(self):
 
         self.X = tf.placeholder(tf.float32, shape=[None, 1, DIMEN_X, DIMEN_X, DIMEN_X])
@@ -705,4 +702,8 @@ if __name__ == "__main__":
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
         instance.train(sess, continue_training=True)
+
+        # TODO: we can predict both train and test data together thus prepare_classifier_data can finish at one time
+        # Please use the same path while running prepare_classifier_data.py
         #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)
+        #instance.predict(sess, splt_path=cfg.DIR.detector_net_validate_data_path)

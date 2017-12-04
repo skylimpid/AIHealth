@@ -11,7 +11,7 @@ from Net.tensorflow_model.classifier_net import get_config
 
 class TrainingClassifierData(DataSet):
 
-    def __init__(self, preprocess_result_dir, bboxpath_dir, labelfile, split, config,  phase='train'):
+    def __init__(self, preprocess_result_dir, bboxpath_dir, labelfile, split, config, phase='train'):
         assert (phase == 'train' or phase == 'val' or phase == 'test')
         self.random_sample = config['random_sample']
         self.T = config['T']
@@ -106,9 +106,6 @@ class TrainingClassifierData(DataSet):
 
         for i in range(batch_size):
 
-            if not self.hasNextBatch():
-                break
-
             file_name = None
             while self.hasNextBatch():
                 croplist, coordlist, isnodlist, label, file_name = self.__getitem__(self.index)
@@ -155,7 +152,9 @@ class TrainingClassifierData(DataSet):
 
 
     def __len__(self):
-            return len(self.candidate_box)
+        # self.filenames: all defined files in the scope (per split)
+        # self.candidate_box: all the available files (per preprocess_result_dir)
+        return len(self.filenames)
 
     def hasNextBatch(self):
         return self.index < self.length
@@ -166,11 +165,23 @@ class TrainingClassifierData(DataSet):
 
 if __name__ == "__main__":
 
-    dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path, cfg.DIR.bbox_path,
+    # training data testing
+    dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
+                                     cfg.DIR.bbox_path,
                                      cfg.DIR.kaggle_full_labels,
-                                     cfg.DIR.classifier_net_train_data_path
-                                     , get_config(), phase = "train")
+                                     cfg.DIR.classifier_net_train_data_path,
+                                     get_config(),
+                                     phase = "train")
 
+    print("candidate_box len: ", len(dataset.candidate_box))
+    print("filenames len: ", len(dataset.filenames))
+    print("items len: ", dataset.__len__())
+
+    # edge case testing
+    dataset.__getitem__(0, test=True)
+    dataset.__getitem__(dataset.__len__() - 1, test= True)
+
+    # normal case testing
     a, b, c, d, f = dataset.__getitem__(108, test=True)
 
     print(a)
@@ -183,3 +194,15 @@ if __name__ == "__main__":
     _, _, _, labels, file_names = dataset.getNextBatch(5)
     print(labels)
     print(file_names)
+
+    # validate data testing
+    dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
+                                     cfg.DIR.bbox_path,
+                                     cfg.DIR.kaggle_full_labels,
+                                     cfg.DIR.classifier_net_validate_data_path,
+                                     get_config(),
+                                     phase='val')
+
+    print("candidate_box len: ", len(dataset.candidate_box))
+    print("filenames len: ", len(dataset.filenames))
+    print("items len: ", dataset.__len__())

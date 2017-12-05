@@ -60,6 +60,7 @@ def inference_each(patient_id, dicom_dir, confidence_level):
 
     if not os.path.isdir(patient_dicom):
         print("Bad data. {} should be a directory.".format(patient_dicom))
+        exit(-1)
 
     if not os.path.exists(patient_dicom):
         print("The dicom file of the patient:{} does not exist in this directory:{}"

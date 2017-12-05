@@ -25,12 +25,12 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
     <!DOCTYPE html>
     <html>
     <head>
-      <center><h1>Diagnosis Report</h1></center>
+      <center><h1>Rainbow123 Diagnosis Report</h1></center>
       <center><p>{}</p></center>
     </head>
 
     <body>
-    <h2>Patient Name: {}</h2>
+    <h2>Patient ID: {}</h2>
     <h3>The probabilty to have cancer: {}</h3>
     <h3>The potential nodule position:</h3>
     
@@ -59,7 +59,7 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
     df.insert(0, 'nodule_id', list(range(1, len(bbox)+1)))
     df.index += 1
 
-    now = datetime.datetime.now()
+    now = datetime.now()
     now_time = now.strftime("%Y-%m-%d %H:%M")
 
     html = head.format(now_time, patient_id, predict)

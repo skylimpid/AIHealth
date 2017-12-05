@@ -21,7 +21,7 @@
 
 
 # Please add your favor path below with the switch
-ENGINEER_FAVOR = "XG"
+ENGINEER_FAVOR = "LH"
 
 if ENGINEER_FAVOR == "XG":
     DATA_BASE_DIR = "/home/xuan/AIHealthData/"

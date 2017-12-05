@@ -31,8 +31,8 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
 
     <body>
     <h2>Patient ID: {}</h2>
-    <h3>The probabilty to have cancer: {}</h3>
-    <h3>The potential nodule position:</h3>
+    <h3>The probability to have cancer: {}</h3>
+    <h3>The potential nodule positions:</h3>
     
     '''
 
@@ -43,7 +43,7 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
 
     img_div = '''
     <div>
-    <h3> Snapshot for {}:</h3>
+    <h3> Snapshot of {}:</h3>
     <img src="{}" alt="{}" width="500" height="377">
     </div>
     '''
@@ -53,10 +53,10 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
     bbox_extend[:, 0:bbox.shape[1]] = bbox
     bbox_extend[:, bbox.shape[1]:] = voxel_2_world(bbox[:, 1:4], origin, spacing)
 
-    df = DataFrame(bbox_extend, columns=['probablity','z-coordinator(voxel)','y-coordinator(voxel)',
-                                         'x-coordinator(voxel)', 'nodule_diameter', 'z-coordinator(world)',
-                                         'y-coordinator(world)', 'x-coordinator(world)'])
-    df.insert(0, 'nodule_id', list(range(1, len(bbox)+1)))
+    df = DataFrame(bbox_extend, columns=['probability','z-coordinate(voxel)','y-coordinate(voxel)',
+                                         'x-coordinate(voxel)', 'nodule diameter', 'z-coordinate(global)',
+                                         'y-coordinate(global)', 'x-coordinate(global)'])
+    df.insert(0, 'nodule ID', list(range(1, len(bbox)+1)))
     df.index += 1
 
     now = datetime.now()
@@ -67,11 +67,11 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
     html += "<div>" + df.to_html() + "</div>"
 
     for index, row in df.iterrows():
-        id = int(row['nodule_id'])
-        z = int(row['z-coordinator(voxel)'])
-        y = row['y-coordinator(voxel)']
-        x = row['x-coordinator(voxel)']
-        diameter = row['nodule_diameter']
+        id = int(row['nodule ID'])
+        z = int(row['z-coordinate(voxel)'])
+        y = row['y-coordinate(voxel)']
+        x = row['x-coordinate(voxel)']
+        diameter = row['nodule diameter']
 
         circ = Circle((x, y), diameter, color='r', fill=False)
 
@@ -86,8 +86,7 @@ def generate_html_report(report_dir, patient_id, clean_img, bbox, predict, spaci
         png_file = "{}.png".format(id)
         saved_png = os.path.join(img_save_dir, png_file)
         plt.savefig(saved_png)
-        html += img_div.format("nodule_{}".format(id),saved_png, "nodule_{}".format(id))
-
+        html += img_div.format("nodule_{}".format(id), saved_png, "nodule_{}".format(id))
 
 
     html += end

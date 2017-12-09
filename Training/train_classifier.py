@@ -9,6 +9,7 @@ from Net.classifier_net_loss import ClassifierNetLoss
 from Training.configuration_training import cfg
 from Net.tensorflow_model.detector_net import DetectorNet
 from Training.constants import CLASSIFIER_NET_TENSORBOARD_LOG_DIR, DIMEN_X, DIMEN_Y
+from tensorflow.python import pywrap_tensorflow
 
 
 class ClassifierTrainer(object):
@@ -44,15 +45,22 @@ class ClassifierTrainer(object):
         if not os.path.exists(cfg.DIR.classifier_net_saver_dir):
             os.makedirs(cfg.DIR.classifier_net_saver_dir)
 
+
         # load previous saved weights if we enable the continue_training
         if continue_training:
             value_list = []
+            value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
             value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope'))
             restore = tf.train.Saver(value_list)
             restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.classifier_net_saver_dir))
         else:
+            variables = tf.global_variables()
+            var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+            restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
+            restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
             var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope')
             sess.run(tf.variables_initializer(var_classifier))
+
 
         dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
                                          cfg.DIR.bbox_path,
@@ -188,8 +196,81 @@ class ClassifierTrainer(object):
         self.val_average_accuracy_holder = tf.placeholder(tf.float32)
         self.val_average_accuracy_tensor = tf.summary.scalar("val_cl_accuracy", self.val_average_accuracy_holder)
 
-    def test(self):
-        pass
+    def test(self, sess):
+
+        # load the trained detector_net model
+        value_list = []
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
+        value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope'))
+        saver = tf.train.Saver(value_list)
+        saver.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.classifier_net_saver_dir))
+
+        dataset = TrainingClassifierData(cfg.DIR.preprocess_result_path,
+                                         cfg.DIR.bbox_path,
+                                         cfg.DIR.kaggle_full_labels,
+                                         cfg.DIR.classifier_net_validate_data_path, # TODO: update to test path when have
+                                         self.net_config,
+                                         phase='test')
+
+        batch_count = 0
+        total_loss = 0
+        total_loss2 = 0
+        total_accuracy = 0
+        window_count = 0
+        window_loss = 0
+        window_accuracy = 0
+        stat_low_acc = 0
+        stat_acc_80 = 0
+        stat_acc_90 = 0
+        stat_acc_95 = 0
+        while dataset.hasNextBatch():
+            batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(
+                self.cfg.TRAIN_CL.TEST_BATCH_SIZE)
+
+            loss, accuracy_op, loss2 = sess.run(
+                [self.loss, self.accuracy,
+                 self.loss2
+                 ],
+                feed_dict={self.X: batch_data,
+                           self.coord: batch_coord,
+                           self.labels: batch_labels,
+                           self.isnod: batch_isnode})
+
+            batch_count += 1
+            total_loss += loss
+            total_loss2 += loss2
+            total_accuracy += accuracy_op
+            window_count += 1
+            window_loss += loss
+            window_accuracy += accuracy_op
+
+            if accuracy_op >= 0.8:
+                stat_acc_80 += 1
+                if accuracy_op >= 0.9:
+                    stat_acc_90 += 1
+                    if accuracy_op >= 0.95:
+                        stat_acc_95 += 1
+            elif accuracy_op < 0.5:
+                stat_low_acc += 1
+
+            if batch_count % self.cfg.TRAIN_CL.TEST_DISPLAY_STEPS == 0:
+                print("Test step: %d, avg loss: %f, loss: %f, accuracy: %f" % (
+                    batch_count, total_loss / batch_count, window_loss / window_count, window_accuracy / window_count))
+                window_count = 0
+                window_loss = 0
+                window_accuracy = 0
+
+        print("Test total %d finished in loss: %f, loss2: %f and accuracy: %f" % (
+            batch_count,
+            total_loss / batch_count,
+            total_loss2 / batch_count,
+            total_accuracy / batch_count))
+        print("Test stat, total: %d, low accuracy: %d, 0.8 above: %d, 0.9 above: %d, 0.95 above: %d" % (
+            batch_count,
+            stat_low_acc,
+            stat_acc_80,
+            stat_acc_90,
+            stat_acc_95))
 
 
     def validate(self, sess, writer, epoch):
@@ -285,25 +366,24 @@ class ClassifierTrainer(object):
         dataset.reset()
 
 
+def get_variables_in_checkpoint_file(file_name):
+    try:
+        reader = pywrap_tensorflow.NewCheckpointReader(file_name)
+        var_to_shape_map = reader.get_variable_to_shape_map()
+        return var_to_shape_map
+    except Exception as e:
+        print(str(e))
+
+def get_variables_to_restore(variables, var_keep_dic):
+    variables_to_restore = []
+    for v in variables:
+        if v.name.split(':')[0] in var_keep_dic:
+            #print('Variables to be restored: %s' % v.name)
+            variables_to_restore.append(v)
+    return variables_to_restore
+
+
 if __name__ == "__main__":
-
-    def get_variables_in_checkpoint_file(file_name):
-        try:
-            from tensorflow.python import pywrap_tensorflow
-            reader = pywrap_tensorflow.NewCheckpointReader(file_name)
-            var_to_shape_map = reader.get_variable_to_shape_map()
-            return var_to_shape_map
-        except Exception as e:
-            print(str(e))
-
-    def get_variables_to_restore(variables, var_keep_dic):
-        variables_to_restore = []
-        for v in variables:
-            if v.name.split(':')[0] in var_keep_dic:
-                print('Variables to be restored: %s' % v.name)
-                variables_to_restore.append(v)
-        return variables_to_restore
-
 
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True
@@ -311,20 +391,6 @@ if __name__ == "__main__":
         detector_net = DetectorNet()
         instance = ClassifierTrainer(cfg, detector_net)
         sess.run(tf.global_variables_initializer())
-        variables = tf.global_variables()
-        var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
-        restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
-        # var_detector = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope')
-        # restorer = tf.train.Saver(var_detector)
-
-        # print("before restore:")
-        # print(tf.get_default_graph().get_tensor_by_name(
-        #    name='global/detector_scope/global/detector_scope/resBlock6/resBlock6-3_conv2_bn/gamma/Adadelta_1:0').eval())
-
-        restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
-
-        # print("after:")
-        # print(tf.get_default_graph().get_tensor_by_name(name='global/detector_scope/global/detector_scope/resBlock6/resBlock6-3_conv2_bn/gamma/Adadelta_1:0').eval())
-
-        instance.train(sess, continue_training = True, enable_validate = True)
+        #instance.train(sess, continue_training = True, enable_validate = True)
+        instance.test(sess)
 

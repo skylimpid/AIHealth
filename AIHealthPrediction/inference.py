@@ -55,7 +55,21 @@ def inference():
 
 def inference_each(patient_id, dicom_dir, confidence_level):
 
-    init_start = time.time()
+    start = time.time()
+
+    predict, bbox, spacing, origin, cleaned_dicom_files = preprocess_and_inference(patient_id, dicom_dir, confidence_level)
+
+    print("Generating the diagnosis report.")
+    generate_html_report(report_dir=config['report_dir'], patient_id=patient_id, clean_img=cleaned_dicom_files,
+                         bbox=bbox, predict=predict, spacing=spacing, origin=origin)
+    print("The Diagnosis report has been generated for the patient: {}.".format(patient_id))
+
+    end = time.time()
+    print("The total time spend for patient:{} is {}".format(patient_id, str(end - start)))
+
+
+def preprocess_and_inference(patient_id, dicom_dir, confidence_level):
+
     patient_dicom = os.path.join(dicom_dir, patient_id)
 
     if not os.path.isdir(patient_dicom):
@@ -63,18 +77,18 @@ def inference_each(patient_id, dicom_dir, confidence_level):
         exit(-1)
 
     if not os.path.exists(patient_dicom):
-        print("The dicom file of the patient:{} does not exist in this directory:{}"
-                         .format(patient_id, dicom_dir))
+        print("The dicom file of the patient:{} does not exist in the directory:{}"
+              .format(patient_id, dicom_dir))
         exit(-1)
 
     if (len(os.listdir(patient_dicom)) == 0):
-        print("There are no dicom files for patient:{} under directory:{}".format(patient_id, patient_dicom))
+        print("There are no dicom files for patient:{} in the directory:{}".format(patient_id, patient_dicom))
         exit(-1)
 
-    print("Start to work on patient:{}'s data. ".format(patient_id))
+    print("Start working on patient: ", patient_id)
 
-    print("Preprocessing the dicom files. The total dicom files for this patient:{} are:{}".format(patient_id,
-        len(os.listdir(patient_dicom))))
+    print("Preprocess the patient's dicom files with the total number: ", len(os.listdir(patient_dicom)))
+
     start = time.time()
     resolution = np.array([1, 1, 1])
     im, m1, m2, spacing, origin = dicom_python(patient_dicom)
@@ -109,17 +123,17 @@ def inference_each(patient_id, dicom_dir, confidence_level):
     cleaned_dicom_files = sliceim2[np.newaxis, ...]
     print(cleaned_dicom_files.shape)
     end = time.time()
-    print("Finish the preprocessing. The total time spent:{}".format(end-start))
+    print("Finished the preprocessing. Total preprocessing time: {}".format(end - start))
 
-    print("Predict....")
+    print("Predict...")
     start = time.time()
     # prepare the dataset for detectnet and classifiernet
     split_combine = SplitComb(side_len=SIDE_LEN, max_stride=config['max_stride'],
                               stride=config['stride'], margin=MARGIN,
                               pad_value=config['pad_value'])
 
-    data_set = InferenceDataSet(config = config, split_combiner = split_combine,
-                                preprocessed_clean_img = cleaned_dicom_files)
+    data_set = InferenceDataSet(config=config, split_combiner=split_combine,
+                                preprocessed_clean_img=cleaned_dicom_files)
 
     bbox = detector_net_predict(data_set, split_combine)
 
@@ -130,15 +144,9 @@ def inference_each(patient_id, dicom_dir, confidence_level):
     predict = classifier_net_predict(data_set, bbox)
 
     end = time.time()
-    print("Get the predict results. The total time spent:{}".format(end-start))
+    print("Finished the predicting. Total predicting time: {}".format(end-start))
 
-    print("Generating the diagnosis report.")
-    generate_html_report(report_dir=config['report_dir'], patient_id=patient_id, clean_img=cleaned_dicom_files,
-                         bbox=bbox, predict=predict, spacing=spacing, origin=origin)
-    print("The Diagnosis report has been generated for the patient:{}.".format(patient_id))
-
-    end = time.time()
-    print("The total time spend for patient:{} is {}".format(patient_id, str(end-init_start)))
+    return predict, bbox, spacing, origin, cleaned_dicom_files
 
 
 def detector_net_predict(data_set, split_combine):

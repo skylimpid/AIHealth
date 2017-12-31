@@ -2906,7 +2906,7 @@ Predict....
 Got the predict results. The total time spent: 60.384827852249146
 Result: true neg for  a7411bdc623413af46a30bd9d2c41066
 Total inference patient number:  319
-Stat report: true pos: 38 (0.119122), true neg: 211 (0.661442), false pos: 25 (0.078370), flase neg: 45 (0.141066)
+Stat report: true pos: 38 (0.119122), true neg: 211 (0.661442), false pos: 25 (0.078370), false neg: 45 (0.141066)
 The total time spend is 41168.492324113846 (11.4 hours)
 
 Process finished with exit code 0

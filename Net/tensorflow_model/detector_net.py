@@ -68,7 +68,7 @@ class DetectorNet(object):
         return res_op_relu
 
 
-    def getDetectorNet(self, X, coord):
+    def getDetectorNet(self, X, coord, dnet_dropout_rate):
 
         """make sure the input tensor has the expected shape"""
         if X.shape != (X.shape[0], self.img_channel, self.img_row, self.img_col, self.img_depth):
@@ -153,7 +153,9 @@ class DetectorNet(object):
                 resBlock6_1 = self.build_resblock(comb2, 131, 128, name="resBlock6_1")
                 resBlock6_2 = self.build_resblock(resBlock6_1, 128, 128, name="resBlock6-2")
                 feat = self.build_resblock(resBlock6_2, 128, 128, name="resBlock6-3")
-                dropout = tf.layers.dropout(feat, rate=0.2, name="dropout_feature")
+                #dropout = tf.layers.dropout(feat, rate=0.2, name="dropout_feature")
+                dropout = tf.layers.dropout(feat, rate=dnet_dropout_rate, name="dropout_feature")
+
 
             with tf.variable_scope("global/detector_scope/output"):
                 output_0 = tf.layers.conv3d(dropout, 64, kernel_size=(1, 1, 1), strides=(1, 1, 1), padding="valid",

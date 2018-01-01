@@ -148,7 +148,8 @@ class DetectorTrainer(object):
                           ],
                          feed_dict={self.X: batch_data,
                                     self.coord: batch_coord,
-                                    self.labels: batch_labels})
+                                    self.labels: batch_labels,
+                                    self.dnet_dropout_rate: 0.2})
 
                 writer.add_summary(summary_op_batch, train_step)
 
@@ -270,7 +271,7 @@ class DetectorTrainer(object):
                                 self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
                                 self.feat, self.out, self.summary_op],
                                 feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                           self.labels: batch_labels})
+                                           self.labels: batch_labels, self.dnet_dropout_rate: 0.2})
                             writer.add_summary(summary_op_batch, train_step)
                         else:
                             _, loss_per_batch, _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
@@ -280,7 +281,7 @@ class DetectorTrainer(object):
                                 self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
                                 self.feat, self.out, self.summary_op],
                                 feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                           self.labels: batch_labels})
+                                           self.labels: batch_labels, self.dnet_dropout_rate: 0.2})
                             writer.add_summary(summary_op_batch, train_step)
                     else:
                         _, loss_per_batch, _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
@@ -290,7 +291,7 @@ class DetectorTrainer(object):
                             self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
                             self.feat, self.out, self.summary_op],
                             feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                       self.labels: batch_labels})
+                                       self.labels: batch_labels, self.dnet_dropout_rate: 0.2})
                         writer.add_summary(summary_op_batch, train_step)
                 else:
                     if self.has_negative_in_label(batch_labels):
@@ -302,7 +303,7 @@ class DetectorTrainer(object):
                                  self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
                                  self.feat, self.out, self.summary_op],
                                 feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                           self.labels: batch_labels})
+                                           self.labels: batch_labels, self.dnet_dropout_rate: 0.2})
                             writer.add_summary(summary_op_batch, train_step)
                         else:
                             _, loss_per_batch,  _, _, _, _, _, _, _, _, _, _, summary_op_batch = sess.run([
@@ -312,7 +313,7 @@ class DetectorTrainer(object):
                                 self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2,
                                 self.feat, self.out, self.summary_op],
                                 feed_dict={self.X: batch_data, self.coord: batch_coord,
-                                           self.labels: batch_labels})
+                                           self.labels: batch_labels, self.dnet_dropout_rate: 0.2})
                             writer.add_summary(summary_op_batch, train_step)
                     else:
                         print("Can not find any label data from the data-set in this batch. Skip it")
@@ -363,9 +364,11 @@ class DetectorTrainer(object):
 
         self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 
+        self.dnet_dropout_rate = tf.placeholder(tf.float32, shape=())
+
         self.conv1, self.res_block_1_2, self.res_block_2_2, self.resBlock3_3, \
         self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2, \
-        self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord)
+        self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord, self.dnet_dropout_rate)
 
         [self.reg_loss_1,
          self.reg_loss_2,
@@ -421,9 +424,11 @@ class DetectorTrainer(object):
 
         self.net_config, self.detector_net_object, loss_object, self.pbb = get_model()
 
+        self.dnet_dropout_rate = tf.placeholder(tf.float32, shape=())
+
         self.conv1, self.res_block_1_2, self.res_block_2_2, self.resBlock3_3,\
         self.resBlock4_3, self.comb3, self.resBlock5_3, self.comb2, \
-        self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord)
+        self.feat, self.out = self.detector_net_object.getDetectorNet(self.X, self.coord, self.dnet_dropout_rate)
 
         [self.classify_loss_with_pos_neg_without_hard_mining,
          self.classify_loss_without_pos_without_hard_mining,
@@ -525,7 +530,7 @@ class DetectorTrainer(object):
             while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
                 feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
                     self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
-                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
+                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE], self.dnet_dropout_rate: 0.0})
                 if final_out is None:
                     final_out = out_predict
                 else:
@@ -535,7 +540,7 @@ class DetectorTrainer(object):
 
             if index < total_size_per_img:
                 feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
-                    self.X: imgs[index:], self.coord: coord2[index:]})
+                    self.X: imgs[index:], self.coord: coord2[index:], self.dnet_dropout_rate: 0.0})
                 if final_out is None:
                     final_out = out_predict
                 else:
@@ -583,7 +588,7 @@ class DetectorTrainer(object):
             while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
                 feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
                     self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
-                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
+                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE], self.dnet_dropout_rate: 0.0})
                 if final_out is None:
                     final_out = out_predict
                 else:
@@ -593,7 +598,7 @@ class DetectorTrainer(object):
 
             if index < total_size_per_img:
                 feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
-                    self.X: imgs[index:], self.coord: coord2[index:]})
+                    self.X: imgs[index:], self.coord: coord2[index:], self.dnet_dropout_rate: 0.0})
                 if final_out is None:
                     final_out = out_predict
                 else:
@@ -615,7 +620,7 @@ class DetectorTrainer(object):
             average_iou += per_iou/len(bboxes)
 
         feed = {self.validate_average_iou_holder: average_iou / input_data.__len__(),
-                self.validate_nodule_predict_ratio_holder: predict_nodules/total_nodules}
+                self.validate_nodule_predict_ratio_holder: predict_nodules/total_nodules, self.dnet_dropout_rate: 0.0}
         iou, ratio = sess.run(self.validate_average_iou_tensor, self.validate_nodule_predict_ratio_tensor,
                                     feed_dict=feed)
         writer.add_summary(iou, epoch)
@@ -663,7 +668,7 @@ class DetectorTrainer(object):
             while index + self.cfg.TRAIN.BATCH_SIZE < total_size_per_img:
                 feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
                     self.X: imgs[index:index + self.cfg.TRAIN.BATCH_SIZE],
-                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE]})
+                    self.coord: coord2[index:index + self.cfg.TRAIN.BATCH_SIZE], self.dnet_dropout_rate: 0.0})
                 if final_out is None:
                     final_out = out_predict
                 else:
@@ -673,7 +678,7 @@ class DetectorTrainer(object):
 
             if index < total_size_per_img:
                 feat_predict, out_predict = sess.run([self.feat, self.out], feed_dict={
-                    self.X: imgs[index:], self.coord: coord2[index:]})
+                    self.X: imgs[index:], self.coord: coord2[index:], self.dnet_dropout_rate: 0.0})
                 if final_out is None:
                     final_out = out_predict
                 else:
@@ -701,9 +706,9 @@ if __name__ == "__main__":
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
-        instance.train(sess, continue_training=True)
+        #instance.train(sess, continue_training=True)
 
         # TODO: we can predict both train and test data together thus prepare_classifier_data can finish at one time
         # Please use the same path while running prepare_classifier_data.py
-        #instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)
-        #instance.predict(sess, splt_path=cfg.DIR.detector_net_validate_data_path)
+        instance.predict(sess, splt_path=cfg.DIR.detector_net_train_data_path)
+        instance.predict(sess, splt_path=cfg.DIR.detector_net_validate_data_path)

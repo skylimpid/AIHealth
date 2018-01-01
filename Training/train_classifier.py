@@ -48,16 +48,22 @@ class ClassifierTrainer(object):
 
         # load previous saved weights if we enable the continue_training
         if continue_training:
+            print("Resume training from last checkpoint.")
             value_list = []
             value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/detector_scope'))
             value_list.extend(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope'))
             restore = tf.train.Saver(value_list)
             restore.restore(sess, tf.train.latest_checkpoint(self.cfg.DIR.classifier_net_saver_dir))
         else:
+            print("Start new training")
             variables = tf.global_variables()
             var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+            print("Detector Net variables to restore:")
+            for key in var_keep_dic:
+                print(key)
             restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
             restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
+            print("In total %d variables restored." % len(var_keep_dic))
             var_classifier = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='global/cl_scope')
             sess.run(tf.variables_initializer(var_classifier))
 
@@ -81,6 +87,8 @@ class ClassifierTrainer(object):
             window_count = 0
             window_loss = 0
             window_accuracy = 0
+
+
             while dataset.hasNextBatch():
 
                 batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(self.cfg.TRAIN_CL.BATCH_SIZE)
@@ -97,7 +105,9 @@ class ClassifierTrainer(object):
                                                 feed_dict={self.X: batch_data,
                                                            self.coord: batch_coord,
                                                            self.labels: batch_labels,
-                                                           self.isnod: batch_isnode})
+                                                           self.isnod: batch_isnode,
+                                                           self.cnet_dropout_rate: 0.5,
+                                                           self.dnet_dropout_rate: 0.2})
 
                 batch_count += 1
                 total_loss += loss
@@ -128,6 +138,8 @@ class ClassifierTrainer(object):
                     print("batch_file_names: ", batch_file_names)
                     #print("nodule_feat: ", nodule_feat)
 
+                    #self.validate(sess, writer, val_epoch)
+
             print("Epoch %d finished in loss: %f and accuracy: %f" % (epoch, total_loss/batch_count, total_accuracy/batch_count))
             feed = {average_loss_holder: total_loss/batch_count, average_loss2_holder: total_loss2/batch_count, average_accuracy_holder: total_accuracy/batch_count}
             average_loss_str, average_loss2_str, average_accuracy_str = sess.run([average_loss_tensor, average_loss2_tensor, average_accuracy_tensor],
@@ -145,6 +157,7 @@ class ClassifierTrainer(object):
 
             if enable_validate and epoch >= self.cfg.TRAIN_CL.VAL_EPOCHES_BASE and epoch % self.cfg.TRAIN_CL.VAL_EPOCHES_INC == 0:
                 val_epoch += 1
+                print("validating...")
                 self.validate(sess, writer, val_epoch)
 
         filename = os.path.join(self.cfg.DIR.classifier_net_saver_dir, (self.cfg.DIR.classifier_net_saver_file_prefix
@@ -164,8 +177,12 @@ class ClassifierTrainer(object):
         self.coord = tf.placeholder(tf.float32, shape=[None, topK, 3, DIMEN_Y, DIMEN_Y, DIMEN_Y])
         self.labels = tf.placeholder(tf.float32, shape=[None, 1])
         self.isnod = tf.placeholder(tf.float32, shape=[None, topK])
+        self.dnet_dropout_rate = tf.placeholder(tf.float32, shape=())
+        self.cnet_dropout_rate = tf.placeholder(tf.float32, shape=())
 
-        self.nodulePred, self.casePred, self.casePred_each, self.center_feat, self.nodule_feat = classifier_net_object.get_classifier_net(self.X, self.coord)
+        self.nodulePred, self.casePred, self.casePred_each, self.center_feat, self.nodule_feat = classifier_net_object.get_classifier_net(self.X, self.coord,
+                                                                                                                                          self.dnet_dropout_rate,
+                                                                                                                                          self.cnet_dropout_rate)
 
 
         loss_object = ClassifierNetLoss(self.net_config)
@@ -183,8 +200,19 @@ class ClassifierTrainer(object):
         self.loss_optimizer = tf.train.AdadeltaOptimizer(learning_rate=lr).minimize(self.loss, global_step=global_step)
 
         # TODO: adjust 0.5 appropriately for a better result
-        correct_predict = tf.equal(self.labels[:,0], tf.cast(self.casePred >= 0.5, tf.float32))
-        self.accuracy = tf.reduce_mean(tf.cast(correct_predict, tf.float32))
+        self.preds = tf.cast(self.casePred >= 0.5, tf.float32)
+        self.correct_preds = tf.equal(self.labels[:,0], self.preds)
+        #
+        self.tp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(self.labels[:, 0], 1.), tf.equal(self.preds, 1.)), tf.float32))
+        self.fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(self.labels[:, 0], 0.), tf.equal(self.preds, 1.)), tf.float32))
+        self.fn = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(self.labels[:, 0], 1.), tf.equal(self.preds, 0.)), tf.float32))
+
+        # self.tp = tf.metrics.true_positives(labels=self.labels[:,0], predictions=tf.cast(self.casePred>=0.5, tf.float32))
+        # self.fp = tf.metrics.false_positives(labels=self.labels[:,0], predictions=tf.cast(self.casePred>=0.5, tf.float32))
+        # self.fn = tf.metrics.false_negatives(labels=self.labels[:,0], predictions=tf.cast(self.casePred>=0.5, tf.float32))
+        # self.accu = tf.metrics.accuracy(labels=self.labels[:, 0], predictions=tf.cast(self.casePred >= 0.5, tf.float32))
+
+        self.accuracy = tf.reduce_mean(tf.cast(self.correct_preds, tf.float32))
 
 
         self.val_average_loss_holder = tf.placeholder(tf.float32)
@@ -234,7 +262,9 @@ class ClassifierTrainer(object):
                 feed_dict={self.X: batch_data,
                            self.coord: batch_coord,
                            self.labels: batch_labels,
-                           self.isnod: batch_isnode})
+                           self.isnod: batch_isnode,
+                           self.dnet_dropout_rate: 0.0,
+                           self.cnet_dropout_rate: 0.0})
 
             batch_count += 1
             total_loss += loss
@@ -286,6 +316,10 @@ class ClassifierTrainer(object):
         total_loss = 0
         total_loss2 = 0
         total_accuracy = 0
+        #total_accu = 0
+        tp_count = 0
+        fp_count = 0
+        fn_count = 0
         window_count = 0
         window_loss = 0
         window_accuracy = 0
@@ -297,19 +331,28 @@ class ClassifierTrainer(object):
             batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(
                 self.cfg.TRAIN_CL.VAL_BATCH_SIZE)
 
-            loss, accuracy_op, loss2 = sess.run(
+            loss, accuracy_op, loss2, tp, fp, fn = sess.run(
                 [self.loss, self.accuracy,
-                 self.loss2
+                 self.loss2,
+                 self.tp,
+                 self.fp,
+                 self.fn
                  ],
                 feed_dict={self.X: batch_data,
                            self.coord: batch_coord,
                            self.labels: batch_labels,
-                           self.isnod: batch_isnode})
+                           self.isnod: batch_isnode,
+                           self.cnet_dropout_rate: 0.0,
+                           self.dnet_dropout_rate: 0.0})
 
             batch_count += 1
             total_loss += loss
             total_loss2 += loss2
             total_accuracy += accuracy_op
+            #total_accu += accu_op
+            tp_count += tp
+            fp_count += fp
+            fn_count += fn
             window_count += 1
             window_loss += loss
             window_accuracy += accuracy_op
@@ -350,6 +393,7 @@ class ClassifierTrainer(object):
                                                                                                         stat_acc_80,
                                                                                                         stat_acc_90,
                                                                                                         stat_acc_95))
+        print("Validation tp: %d, fp: %d, fn: %d" % (tp_count, fp_count, fn_count))
 
         feed = {self.val_average_loss_holder: total_loss / batch_count,
                 self.val_average_loss2_holder: total_loss2 / batch_count,
@@ -391,6 +435,6 @@ if __name__ == "__main__":
         detector_net = DetectorNet()
         instance = ClassifierTrainer(cfg, detector_net)
         sess.run(tf.global_variables_initializer())
-        #instance.train(sess, continue_training = True, enable_validate = True)
-        instance.test(sess)
+        instance.train(sess, continue_training = False, enable_validate = True)
+        #instance.test(sess)
 

@@ -54,7 +54,7 @@ class ClassifierNet(object):
         self.img_depth = img_depth
         self.img_channel = img_channel
 
-    def get_classifier_net(self, X, coord):
+    def get_classifier_net(self, X, coord, dnet_dropout_rate, cnet_dropout_rate):
         xsize = X.get_shape().as_list()
         # batch, depth, height, width, channels)
         X = tf.reshape(X, (-1, self.img_channel, self.img_depth, self.img_row, self.img_col))
@@ -62,7 +62,7 @@ class ClassifierNet(object):
         coordsize = coord.get_shape().as_list()
 
         coord = tf.reshape(coord, (-1, coordsize[2], coordsize[3], coordsize[4], coordsize[5]))
-        _,_,_,_,_,_,_,_,noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord)
+        _,_,_,_,_,_,_,_,noduleFeat, nodulePred = self.detectorNet.getDetectorNet(X, coord, dnet_dropout_rate)
 
         with tf.variable_scope('global/cl_scope'):
             nodulePred = tf.reshape(nodulePred, (-1, coordsize[1], coordsize[2]*coordsize[3]*coordsize[4]*coordsize[5]))
@@ -82,7 +82,8 @@ class ClassifierNet(object):
 
             centerFeat = centerFeat[:, :, 0, 0, 0]
             # print(centerFeat.shape)
-            out = tf.layers.dropout(centerFeat, rate=0.5, name="dropout_after_cent_feat")
+            #out = tf.layers.dropout(centerFeat, rate=0.5, name="dropout_after_cent_feat")
+            out = tf.layers.dropout(centerFeat, rate=cnet_dropout_rate, name="dropout_after_cent_feat")
             # print(out.shape)
             dense1 = tf.layers.dense(inputs=out, units=64, activation=tf.nn.relu, name="dense_1")
             # print(dense1.shape)

@@ -12,7 +12,7 @@ class ClassifierNetLoss(object):
         output = tf.clip_by_value(output, clip_value_min=1e-5, clip_value_max=(1-(1e-5)))
         loss2 = -tf.reduce_sum(labels * tf.log(output) + (1-labels) * tf.log(1 - output))
         missMask = tf.cast(output_each<self.config['miss_thresh'], dtype=tf.float32)
-        missLoss = -tf.reduce_sum(missMask*isnod*tf.log(output_each+1e-5))/batch_size/k_size
+        missLoss = -tf.reduce_sum(missMask*isnod*tf.log(output_each+1e-3))/batch_size/k_size
         #missLoss = -tf.reduce_sum(tf.multiply(tf.multiply(missMask, isnod), tf.log(output_each + 0.001))) / batch_size / k_size
         return tf.add(loss2, self.config['miss_ratio']*missLoss), loss2, missLoss, missMask
 

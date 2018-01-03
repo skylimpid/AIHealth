@@ -11,6 +11,8 @@ from Net.tensorflow_model.detector_net import DetectorNet
 from Training.constants import CLASSIFIER_NET_TENSORBOARD_LOG_DIR, DIMEN_X, DIMEN_Y
 from tensorflow.python import pywrap_tensorflow
 
+from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
+
 
 class ClassifierTrainer(object):
 
@@ -58,9 +60,9 @@ class ClassifierTrainer(object):
             print("Start new training")
             variables = tf.global_variables()
             var_keep_dic = get_variables_in_checkpoint_file(tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
-            print("Detector Net variables to restore:")
-            for key in var_keep_dic:
-                print(key)
+            #print("Detector Net variables to restore:")
+            #for key in var_keep_dic:
+            #    print(key)
             restorer = tf.train.Saver(get_variables_to_restore(variables, var_keep_dic))
             restorer.restore(sess, tf.train.latest_checkpoint(cfg.DIR.detector_net_saver_dir))
             print("In total %d variables restored." % len(var_keep_dic))
@@ -88,6 +90,7 @@ class ClassifierTrainer(object):
             window_loss = 0
             window_accuracy = 0
 
+            #self.validate(sess, writer, val_epoch)
 
             while dataset.hasNextBatch():
 
@@ -207,11 +210,6 @@ class ClassifierTrainer(object):
         self.fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(self.labels[:, 0], 0.), tf.equal(self.preds, 1.)), tf.float32))
         self.fn = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(self.labels[:, 0], 1.), tf.equal(self.preds, 0.)), tf.float32))
 
-        # self.tp = tf.metrics.true_positives(labels=self.labels[:,0], predictions=tf.cast(self.casePred>=0.5, tf.float32))
-        # self.fp = tf.metrics.false_positives(labels=self.labels[:,0], predictions=tf.cast(self.casePred>=0.5, tf.float32))
-        # self.fn = tf.metrics.false_negatives(labels=self.labels[:,0], predictions=tf.cast(self.casePred>=0.5, tf.float32))
-        # self.accu = tf.metrics.accuracy(labels=self.labels[:, 0], predictions=tf.cast(self.casePred >= 0.5, tf.float32))
-
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_preds, tf.float32))
 
 
@@ -327,16 +325,21 @@ class ClassifierTrainer(object):
         stat_acc_80 = 0
         stat_acc_90 = 0
         stat_acc_95 = 0
+
+        val_scores = []
+        val_labels = []
+
         while dataset.hasNextBatch():
             batch_data, batch_coord, batch_isnode, batch_labels, batch_file_names = dataset.getNextBatch(
                 self.cfg.TRAIN_CL.VAL_BATCH_SIZE)
 
-            loss, accuracy_op, loss2, tp, fp, fn = sess.run(
+            loss, accuracy_op, loss2, tp, fp, fn, casePred = sess.run(
                 [self.loss, self.accuracy,
                  self.loss2,
                  self.tp,
                  self.fp,
-                 self.fn
+                 self.fn,
+                 self.casePred
                  ],
                 feed_dict={self.X: batch_data,
                            self.coord: batch_coord,
@@ -344,6 +347,9 @@ class ClassifierTrainer(object):
                            self.isnod: batch_isnode,
                            self.cnet_dropout_rate: 0.0,
                            self.dnet_dropout_rate: 0.0})
+
+            val_scores.extend(casePred[:, 0].tolist())
+            val_labels.extend(batch_labels[:, 0].tolist())
 
             batch_count += 1
             total_loss += loss
@@ -367,13 +373,13 @@ class ClassifierTrainer(object):
                 stat_low_acc += 1
 
             # dump potential error
-            if loss > 1:
-                print("--->Val epoch: %d, batch: %d" % (epoch, batch_count))
-                print("batch_labels: ", batch_labels)
-                print("loss: ", loss, loss2)
-                print("accuracy: ", accuracy_op)
-                print("batch_is_nod: ", batch_isnode)
-                print("batch_file_names: ", batch_file_names)
+            # if loss > 1:
+            #     print("--->Val epoch: %d, batch: %d" % (epoch, batch_count))
+            #     print("batch_labels: ", batch_labels)
+            #     print("loss: ", loss, loss2)
+            #     print("accuracy: ", accuracy_op)
+            #     print("batch_is_nod: ", batch_isnode)
+            #     print("batch_file_names: ", batch_file_names)
 
             if batch_count % self.cfg.TRAIN_CL.VAL_DISPLAY_STEPS == 0:
                 print("Val step: %d, avg loss: %f, loss: %f, accuracy: %f" % (
@@ -381,6 +387,8 @@ class ClassifierTrainer(object):
                 window_count = 0
                 window_loss = 0
                 window_accuracy = 0
+
+
 
         print("Validation epoch %d finished in loss: %f, loss2: %f and accuracy: %f" % (
                                                                                 epoch,
@@ -393,7 +401,13 @@ class ClassifierTrainer(object):
                                                                                                         stat_acc_80,
                                                                                                         stat_acc_90,
                                                                                                         stat_acc_95))
-        print("Validation tp: %d, fp: %d, fn: %d" % (tp_count, fp_count, fn_count))
+        print("Validation tp: %d, fp: %d, fn: %d, tn: %d" % (tp_count, fp_count, fn_count, batch_count-tp_count-fp_count-fn_count))
+
+        precision, recall, _ = precision_recall_curve(val_labels, val_scores)
+        pr_auc = auc(recall, precision)
+        roc_auc = roc_auc_score(val_labels, val_scores)
+
+        print("Validation precision-recall-auc: %f, roc-auc: %f" % (pr_auc, roc_auc))
 
         feed = {self.val_average_loss_holder: total_loss / batch_count,
                 self.val_average_loss2_holder: total_loss2 / batch_count,

@@ -22,7 +22,7 @@ config['random_sample'] = False
 config['T'] = 1
 config['topk'] = 5
 config['stride'] = 4
-config['augtype'] = {'flip': False, 'swap': False, 'rotate': False, 'scale': False}
+config['augtype'] = {'flip': True, 'swap': True, 'rotate': True, 'scale': True}
 
 config['detect_th'] = 0.05
 config['conf_th'] = -1

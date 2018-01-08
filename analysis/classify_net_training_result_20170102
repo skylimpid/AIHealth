@@ -1,0 +1,41 @@
+Changes:
+1. Turn off drop out for testing/validation, turn off drop out for detect-net prediction.
+2. Turn on the image augmentation.
+
+
+Epoch 1 finished in loss: 0.551037 and accuracy: 0.747244
+
+Validation epoch 1 finished in loss: 0.462815, loss2: 0.458790 and accuracy: 0.805643
+Validation stat, total: 319, low accuracy: 62, 0.8 above: 257, 0.9 above: 257, 0.95 above: 257
+Validation tp: 41, fp: 20, fn: 42, tn: 216
+Validation precision-recall-auc: 0.614545, roc-auc: 0.807739
+
+
+Validation epoch 2 finished in loss: 0.464226, loss2: 0.459420 and accuracy: 0.808777
+Validation stat, total: 319, low accuracy: 61, 0.8 above: 258, 0.9 above: 258, 0.95 above: 258
+Validation tp: 47, fp: 25, fn: 36, tn: 211
+Validation precision-recall-auc: 0.606560, roc-auc: 0.808658
+
+
+Validation epoch 3 finished in loss: 0.472604, loss2: 0.466678 and accuracy: 0.799373
+Validation stat, total: 319, low accuracy: 64, 0.8 above: 255, 0.9 above: 255, 0.95 above: 255
+Validation tp: 40, fp: 21, fn: 43, tn: 215
+Validation precision-recall-auc: 0.620105, roc-auc: 0.807178
+
+
+(Best)
+Validation epoch 4 finished in loss: 0.477996, loss2: 0.471150 and accuracy: 0.818182
+Validation stat, total: 319, low accuracy: 58, 0.8 above: 261, 0.9 above: 261, 0.95 above: 261
+Validation tp: 46, fp: 21, fn: 37, tn: 215
+Validation precision-recall-auc: 0.643367, roc-auc: 0.820349
+
+Validation epoch 5 finished in loss: 0.474307, loss2: 0.468051 and accuracy: 0.796238
+Validation stat, total: 319, low accuracy: 65, 0.8 above: 254, 0.9 above: 254, 0.95 above: 254
+Validation tp: 39, fp: 21, fn: 44, tn: 215
+Validation precision-recall-auc: 0.627604, roc-auc: 0.809781
+
+Validation epoch 6 finished in loss: 0.485925, loss2: 0.479288 and accuracy: 0.805643
+Validation stat, total: 319, low accuracy: 62, 0.8 above: 257, 0.9 above: 257, 0.95 above: 257
+Validation tp: 40, fp: 19, fn: 43, tn: 217
+Validation precision-recall-auc: 0.628475, roc-auc: 0.798601
+
